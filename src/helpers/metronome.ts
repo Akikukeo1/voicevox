@@ -54,6 +54,34 @@ export class Metronome {
     this.intervalId = window.setInterval(() => this.scheduler(), this.lookahead);
   }
 
+  /**
+   * 再生ヘッド位置に合わせて位相を揃えて開始する。
+   * @param offsetIntoBeatSeconds  現在の小節内での拍の経過秒数（ビート内の経過秒）
+   * @param secondsPerBeat ビート1つの長さ（秒）
+   * @param initialBeatIndex 現在のビートインデックス（小節内）
+   */
+  startAligned(
+    offsetIntoBeatSeconds: number,
+    secondsPerBeat: number,
+    initialBeatIndex: number,
+  ) {
+    console.debug("Metronome.startAligned", { offsetIntoBeatSeconds, secondsPerBeat, initialBeatIndex });
+    this.ensureAudio();
+    if (!this.audioCtx || !this.gainNode) return;
+    if (this.audioCtx.state === "suspended") {
+      void this.audioCtx.resume();
+    }
+    if (this.isRunning) this.stop();
+    this.secondsPerBeat = secondsPerBeat;
+    // 次のノート時刻を現在時刻から計算
+    const remainder = offsetIntoBeatSeconds % secondsPerBeat;
+    const timeToNextBeat = remainder === 0 ? 0 : secondsPerBeat - remainder;
+    this.nextNoteTime = this.audioCtx.currentTime + timeToNextBeat;
+    this.beatIndex = ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) + this.beatsPerMeasure) % this.beatsPerMeasure;
+    this.isRunning = true;
+    this.intervalId = window.setInterval(() => this.scheduler(), this.lookahead);
+  }
+
   stop() {
     console.debug("Metronome.stop");
     if (!this.isRunning) return;

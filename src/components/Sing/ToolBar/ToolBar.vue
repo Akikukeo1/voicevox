@@ -191,6 +191,10 @@ import {
   isValidBeats,
   isValidBeatType,
   isValidBpm,
+  tickToSecond,
+  getBeatDuration,
+  tickToMeasureNumber,
+  measureNumberToTick,
 } from "@/sing/music";
 import {
   getSnapTypes,
@@ -422,7 +426,40 @@ const toggleMetronome = () => {
   isMetronomeOn.value = !isMetronomeOn.value;
   console.debug("ToolBar.toggleMetronome", isMetronomeOn.value);
   if (isMetronomeOn.value && nowPlaying.value) {
-    globalMetronome.start();
+    // 再生中にトグルした場合はプレイヘッド位置に同期して開始
+    const playheadTicksValue = playheadTicks.value;
+    // 1拍あたりのtick数: tpqn * (4 / beatType)
+    const beatType = currentTimeSignature.value.beatType;
+    // ticks per beat according to current time signature and tpqn
+    const ticksPerBeat = getBeatDuration(beatType, tpqn.value);
+    // determine current measure start tick
+    const currentMeasureNumber = tickToMeasureNumber(
+      playheadTicksValue,
+      timeSignatures.value,
+      tpqn.value,
+    );
+    const measureStartTick = measureNumberToTick(
+      Math.floor(currentMeasureNumber),
+      timeSignatures.value,
+      tpqn.value,
+    );
+    const ticksIntoMeasure = playheadTicksValue - measureStartTick;
+    const ticksIntoBeat = ticksIntoMeasure % ticksPerBeat;
+    const initialBeatIndex = Math.floor(ticksIntoMeasure / ticksPerBeat) % currentTimeSignature.value.beats;
+
+    // compute seconds: offset into beat = seconds(playheadTick) - seconds(beatStartTick)
+    const beatStartTick = playheadTicksValue - ticksIntoBeat;
+    const offsetIntoBeatSeconds = tickToSecond(
+      playheadTicksValue,
+      tempos.value,
+      tpqn.value,
+    ) -
+      tickToSecond(beatStartTick, tempos.value, tpqn.value);
+
+    const secondsPerBeat =
+      tickToSecond(beatStartTick + ticksPerBeat, tempos.value, tpqn.value) -
+      tickToSecond(beatStartTick, tempos.value, tpqn.value);
+    globalMetronome.startAligned(offsetIntoBeatSeconds, secondsPerBeat, initialBeatIndex);
   } else {
     globalMetronome.stop();
   }
