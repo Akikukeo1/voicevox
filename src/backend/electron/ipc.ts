@@ -1,13 +1,4 @@
 import { type BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
-/**
- * ipc.ts 設計メモ
- * - 想定: ウィンドウは基本的に単一（main/welcomeの切り替えは考慮している）
- * - 複数ウィンドウの同時起動は想定外（必要なら将来拡張する）
- * - IPCハンドラはウィンドウの webContents.id を用いて送信元を検証する
- * - 型安全: `BaseIpcData` のジェネリクスを用いて、チャネル毎の引数/戻り値の型を担保している
- *
- * 注意: ここでは実装の振る舞いを変えず、設計思想を明記するのみ。
- */
 import { wrapToTransferableResult } from "./transferableResultHelper";
 import type { BaseIpcData } from "./ipcType";
 import { createLogger } from "@/helpers/log";
