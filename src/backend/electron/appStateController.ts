@@ -89,6 +89,21 @@ export class AppStateController {
     await welcomeWindowManager.createWindow();
   }
 
+  /**
+   * Mainウィンドウを起動する責務を持つ。
+   *
+   * 責務:
+   * - エンジン関連の準備（`engineAndVvppController.launchEngines()`）を起動する
+   * - Mainウィンドウの作成を行う（`mainWindowManager.createWindow()`）
+   *
+   * 副作用:
+   * - ウィンドウを生成し、アプリの表示状態が `main` になる
+   * - エンジンの起動処理を非同期で実行する
+   *
+   * 行わないこと:
+   * - エンジンの存在確認やインストール操作は行わない（それらは別責務）
+   * - ユーザーへのプロンプト表示や設定変更は行わない
+   */
   private async launchMainWindow() {
     this.activeWindow = "main";
 

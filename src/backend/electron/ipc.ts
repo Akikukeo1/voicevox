@@ -1,4 +1,13 @@
 import { type BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
+/**
+ * ipc.ts 設計メモ
+ * - 想定: ウィンドウは基本的に単一（main/welcomeの切り替えは考慮している）
+ * - 複数ウィンドウの同時起動は想定外（必要なら将来拡張する）
+ * - IPCハンドラはウィンドウの webContents.id を用いて送信元を検証する
+ * - 型安全: `BaseIpcData` のジェネリクスを用いて、チャネル毎の引数/戻り値の型を担保している
+ *
+ * 注意: ここでは実装の振る舞いを変えず、設計思想を明記するのみ。
+ */
 import { wrapToTransferableResult } from "./transferableResultHelper";
 import type { BaseIpcData } from "./ipcType";
 import { createLogger } from "@/helpers/log";
@@ -28,6 +37,7 @@ export function registerIpcMainHandle<Ipc extends BaseIpcData>(
   listeners: IpcMainHandle<Ipc>,
 ): void {
   objectEntries(listeners).forEach(([channel, listener]) => {
+    const channelStr = String(channel);
     const errorHandledListener: typeof listener = (event, ...args) => {
       if (win.isDestroyed() || event.sender.id !== win.webContents.id) {
         return delegated;
@@ -41,14 +51,12 @@ export function registerIpcMainHandle<Ipc extends BaseIpcData>(
 
       return wrapToTransferableResult(() => listener(event, ...args));
     };
-    if (ipcHandlers.has(channel as string)) {
-      ensureNotNullish(ipcHandlers.get(channel as string)).push(
-        errorHandledListener,
-      );
+    if (ipcHandlers.has(channelStr)) {
+      ensureNotNullish(ipcHandlers.get(channelStr)).push(errorHandledListener);
     } else {
-      ipcHandlers.set(channel as string, [errorHandledListener]);
-      ipcMain.handle(channel as string, async (event, ...args: unknown[]) => {
-        const handlers = ipcHandlers.get(channel as string);
+      ipcHandlers.set(channelStr, [errorHandledListener]);
+      ipcMain.handle(channelStr, async (event, ...args: unknown[]) => {
+        const handlers = ipcHandlers.get(channelStr);
         if (!handlers) {
           throw new Error(
             `No handlers registered for channel: ${String(channel)}`,
