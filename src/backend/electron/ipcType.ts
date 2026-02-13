@@ -245,6 +245,19 @@ export type IpcIHData = {
 export type BaseIpcData = Record<string, { args: unknown[]; return: unknown }>;
 
 /**
+ * 使用例（簡易）:
+ * - 独自チャネルを追加する例:
+ *   export type MyIpc = IpcIHData & {
+ *     MY_SIMPLE_CHANNEL: { args: [n: number]; return: string };
+ *   };
+ * - メイン側で登録する例 (ipc.ts の `registerIpcMainHandle` を利用):
+ *   registerIpcMainHandle<MyIpc>(win, { MY_SIMPLE_CHANNEL: (evt, n) => n.toString() });
+ *
+ * 説明: 上記はあくまで短い使用例です。実際の定義では `IpcIHData` / `IpcSOData` を拡張して型安全に扱ってください。
+ * 関連実装: `ipc.ts` を参照してください。
+ */
+
+/**
  * send, on
  */
 export type IpcSOData = {
