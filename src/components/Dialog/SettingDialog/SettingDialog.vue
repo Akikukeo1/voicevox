@@ -512,7 +512,7 @@ import {
   buildAudioFileNameFromRawData,
   buildSongTrackAudioFileNameFromRawData,
 } from "@/store/utility";
-import type {
+import {
   SavingSetting,
   EngineSettingType,
   ExperimentalSettingType,

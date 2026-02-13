@@ -2,26 +2,26 @@ import { ref } from "vue";
 import { createPartialStore } from "./vuex";
 import { createUILockAction } from "./ui";
 import {
-  type SingingStoreState,
-  type SingingStoreTypes,
-  type SingingCommandStoreState,
-  type SingingCommandStoreTypes,
-  type SaveResultObject,
-  type Phrase,
+  SingingStoreState,
+  SingingStoreTypes,
+  SingingCommandStoreState,
+  SingingCommandStoreTypes,
+  SaveResultObject,
+  Phrase,
   transformCommandStore,
-  type SingingVoice,
-  type SequencerEditTarget,
-  type ParameterPanelEditTarget,
-  type PhraseKey,
+  SingingVoice,
+  SequencerEditTarget,
+  ParameterPanelEditTarget,
+  PhraseKey,
   SequenceId,
-  type SingingVolumeKey,
-  type SingingVolume,
-  type SingingVoiceKey,
-  type EditorFrameAudioQueryKey,
-  type EditorFrameAudioQuery,
-  type TrackParameters,
-  type SingingPitchKey,
-  type SingingPitch,
+  SingingVolumeKey,
+  SingingVolume,
+  SingingVoiceKey,
+  EditorFrameAudioQueryKey,
+  EditorFrameAudioQuery,
+  TrackParameters,
+  SingingPitchKey,
+  SingingPitch,
 } from "./type";
 import {
   buildSongTrackAudioFileNameFromRawData,
@@ -29,30 +29,30 @@ import {
   DEFAULT_PROJECT_NAME,
   DEFAULT_STYLE_NAME,
   generateLabelFileData,
-  type PhonemeTimingLabel,
+  PhonemeTimingLabel,
   sanitizeFileName,
 } from "./utility";
 import {
-  type CharacterInfo,
-  type EngineId,
+  CharacterInfo,
+  EngineId,
   NoteId,
   StyleId,
   TrackId,
 } from "@/type/preload";
-import type { Note as NoteForRequestToEngine } from "@/openapi";
+import { Note as NoteForRequestToEngine } from "@/openapi";
 import { ResultError, getValueOrThrow } from "@/type/result";
 import {
-  type AudioEvent,
+  AudioEvent,
   AudioPlayer,
-  type AudioSequence,
+  AudioSequence,
   ChannelStrip,
   Clipper,
   Limiter,
-  type NoteEvent,
-  type NoteSequence,
+  NoteEvent,
+  NoteSequence,
   OfflineTransport,
   PolySynth,
-  type Sequence,
+  Sequence,
   Transport,
 } from "@/sing/audioRendering";
 import {
@@ -117,15 +117,15 @@ import {
 } from "@/sing/utaformatixProject/utils";
 import { ExhaustiveError, UnreachableError } from "@/type/utility";
 import {
-  type CacheLoadedEvent,
-  type PhraseRenderingCompleteEvent,
-  type PhraseRenderingErrorEvent,
-  type PhraseRenderingStartedEvent,
-  type PitchGenerationCompleteEvent,
-  type QueryGenerationCompleteEvent,
+  CacheLoadedEvent,
+  PhraseRenderingCompleteEvent,
+  PhraseRenderingErrorEvent,
+  PhraseRenderingStartedEvent,
+  PitchGenerationCompleteEvent,
+  QueryGenerationCompleteEvent,
   SongTrackRenderer,
-  type VoiceSynthesisCompleteEvent,
-  type VolumeGenerationCompleteEvent,
+  VoiceSynthesisCompleteEvent,
+  VolumeGenerationCompleteEvent,
 } from "@/sing/songTrackRendering";
 import type {
   Note,
@@ -3034,30 +3034,19 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
       }
 
       // パースしたJSONのノートの位置を現在の再生位置に合わせて貼り付ける
-      const currentPlayheadPosition = Math.round(getters.PLAYHEAD_POSITION);
+      const currentPlayheadPosition = getters.PLAYHEAD_POSITION;
       const firstNotePosition = notes[0].position;
-
-      // positionとdurationが整数かチェック
-      const hasNonIntegerValues = notes.some(
-        (note) =>
-          !Number.isInteger(note.position) || !Number.isInteger(note.duration),
-      );
-      if (hasNonIntegerValues) {
-        throw new Error(
-          "Failed to paste notes: position and duration must be integers.",
-        );
-      }
-
       const notesToPaste: Note[] = notes.map((note) => {
         // 新しい位置を現在の再生位置に合わせて計算する
-        const pastePos =
-          note.position - firstNotePosition + currentPlayheadPosition;
+        const pastePos = Math.round(
+          Number(note.position) - firstNotePosition + currentPlayheadPosition,
+        );
         return {
           id: NoteId(uuid4()),
           position: pastePos,
-          duration: note.duration,
-          noteNumber: note.noteNumber,
-          lyric: note.lyric,
+          duration: Number(note.duration),
+          noteNumber: Number(note.noteNumber),
+          lyric: String(note.lyric),
         };
       });
       const pastedNoteIds = notesToPaste.map((note) => note.id);
@@ -3298,7 +3287,7 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
           getters.SELECTED_TRACK,
           getters.CHARACTER_INFO,
         );
-        const project = await ufProjectFromVoicevox(
+        const project = ufProjectFromVoicevox(
           {
             tempos: state.tempos,
             timeSignatures: state.timeSignatures,

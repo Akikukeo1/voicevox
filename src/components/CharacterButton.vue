@@ -195,9 +195,9 @@
 
 <script setup lang="ts">
 import { debounce, QBtn } from "quasar";
-import { computed, type Ref, ref } from "vue";
+import { computed, Ref, ref } from "vue";
 import { useStore } from "@/store";
-import type { CharacterInfo, SpeakerId, Voice } from "@/type/preload";
+import { CharacterInfo, SpeakerId, Voice } from "@/type/preload";
 import { formatCharacterStyleName } from "@/store/utility";
 import { getDefaultStyle } from "@/domain/talk";
 import { useEngineIcons } from "@/composables/useEngineIcons";

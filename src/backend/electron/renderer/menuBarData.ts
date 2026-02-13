@@ -1,11 +1,11 @@
 import { computed } from "vue";
 import { useEngineIcons } from "@/composables/useEngineIcons";
-import type {
+import {
   MaybeComputedMenuBarContent,
   MenuBarContent,
 } from "@/components/Menu/MenuBar/menuBarData";
-import type { MenuItemData } from "@/components/Menu/type";
-import type { Store } from "@/store";
+import { MenuItemData } from "@/components/Menu/type";
+import { Store } from "@/store";
 import { removeNullableAndBoolean } from "@/helpers/arrayHelper";
 
 export const useElectronMenuBarData = (

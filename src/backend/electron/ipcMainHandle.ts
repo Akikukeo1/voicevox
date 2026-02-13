@@ -5,19 +5,19 @@ import { hasSupportedGpu } from "./device";
 import { getConfigManager } from "./electronConfig";
 import { getEngineAndVvppController } from "./engineAndVvppController";
 import { writeFileSafely } from "./fileHelper";
-import type { IpcMainHandle } from "./ipc";
+import { IpcMainHandle } from "./ipc";
 import { getEngineInfoManager } from "./manager/engineInfoManager";
 import { getEngineProcessManager } from "./manager/engineProcessManager";
 import { getMainWindowManager } from "./manager/windowManager/main";
 import { getAppStateController } from "./appStateController";
-import type { IpcIHData } from "./ipcType";
+import { IpcIHData } from "./ipcType";
 import { AssetTextFileNames } from "@/type/staticResources";
 import { failure, success } from "@/type/result";
 import {
   defaultToolbarButtonSetting,
-  type EngineId,
-  type SystemError,
-  type TextAsset,
+  EngineId,
+  SystemError,
+  TextAsset,
 } from "@/type/preload";
 
 // エンジンのフォルダを開く

@@ -1,12 +1,12 @@
-import type {
+import {
   ParameterPanelStateDefinitions,
   ParameterPanelInput,
   ParameterPanelContext,
   PositionOnParameterPanel,
   ParameterPanelIdleStateId,
 } from "../common";
-import type { SetNextState, State } from "@/sing/stateMachine";
-import type { TrackId } from "@/type/preload";
+import { SetNextState, State } from "@/sing/stateMachine";
+import { TrackId } from "@/type/preload";
 import { getButton } from "@/sing/viewHelper";
 
 export class EraseVolumeState

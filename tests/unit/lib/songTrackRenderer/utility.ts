@@ -1,5 +1,5 @@
 import { hash } from "../../utils";
-import type {
+import {
   PhraseInfo,
   PhraseRangeInfo,
   RenderingEventInfo,
@@ -8,20 +8,15 @@ import type {
 import { uuid4 } from "@/helpers/random";
 import { createOpenAPIEngineMock } from "@/mock/engineMock";
 import {
-  type PhraseForRender,
+  PhraseForRender,
   SongTrackRenderer,
-  type SongTrackRenderingEvent,
-  type SongTrackRenderingResult,
+  SongTrackRenderingEvent,
+  SongTrackRenderingResult,
 } from "@/sing/songTrackRendering";
 import { getOverlappingNoteIds } from "@/sing/storeHelper";
 import { calculateHash, getLast } from "@/sing/utility";
-import type { PhraseKey, SingingVoice } from "@/store/type";
-import {
-  type EngineId,
-  NoteId,
-  type StyleId,
-  type TrackId,
-} from "@/type/preload";
+import { PhraseKey, SingingVoice } from "@/store/type";
+import { EngineId, NoteId, StyleId, TrackId } from "@/type/preload";
 import { ExhaustiveError } from "@/type/utility";
 import { getOrThrow } from "@/helpers/mapHelper";
 import { createDefaultTrack } from "@/sing/domain";

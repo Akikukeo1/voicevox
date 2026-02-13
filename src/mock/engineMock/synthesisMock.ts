@@ -4,7 +4,7 @@
  * 音素は適当に別々の電子音にする。
  */
 
-import type { FrameAudioQuery } from "@/openapi";
+import { FrameAudioQuery } from "@/openapi";
 import { generateWavFileData } from "@/helpers/fileDataGenerator";
 import { applyGaussianFilter } from "@/sing/utility";
 

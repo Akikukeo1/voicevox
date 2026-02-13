@@ -1,4 +1,4 @@
-import type { Note, Tempo, TimeSignature } from "@/domain/project/type";
+import { Note, Tempo, TimeSignature } from "@/domain/project/type";
 
 export type MeasuresBeats = {
   measures: number;

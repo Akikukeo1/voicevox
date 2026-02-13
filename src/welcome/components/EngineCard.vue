@@ -53,11 +53,11 @@ import { computed } from "vue";
 import BaseButton from "@/components/Base/BaseButton.vue";
 import BaseSelect from "@/components/Base/BaseSelect.vue";
 import BaseSelectItem from "@/components/Base/BaseSelectItem.vue";
-import type {
-  EnginePackageCurrentInfo,
-  EnginePackageLatestInfo,
+import {
+  EnginePackageLocalInfo,
+  EnginePackageRemoteInfo,
 } from "@/backend/electron/engineAndVvppController";
-import type { RuntimeTarget } from "@/domain/defaultEngine/latestDefaultEngine";
+import type { RuntimeTarget } from "@/domain/defaultEngine/latetDefaultEngine";
 
 import { ExhaustiveError } from "@/type/utility";
 import { sizeToHumanReadable } from "@/helpers/sizeHelper";
@@ -73,12 +73,12 @@ type RuntimeTargetOption = {
   hint?: string;
 };
 type RuntimeTargetInfo =
-  EnginePackageLatestInfo["availableRuntimeTargets"][number];
+  EnginePackageRemoteInfo["availableRuntimeTargets"][number];
 
 const props = defineProps<{
   engineName: string;
-  localInfo: EnginePackageCurrentInfo;
-  remoteInfo?: EnginePackageLatestInfo;
+  localInfo: EnginePackageLocalInfo;
+  remoteInfo?: EnginePackageRemoteInfo;
   selectedRuntimeTarget?: RuntimeTarget;
   runtimeSelectDisabled: boolean;
   progressInfo?: EngineProgressInfo;

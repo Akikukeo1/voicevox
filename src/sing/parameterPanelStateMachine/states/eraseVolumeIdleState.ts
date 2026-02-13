@@ -1,9 +1,9 @@
-import type {
+import {
   ParameterPanelStateDefinitions,
   ParameterPanelInput,
   ParameterPanelContext,
 } from "../common";
-import type { SetNextState, State } from "@/sing/stateMachine";
+import { SetNextState, State } from "@/sing/stateMachine";
 import { getButton } from "@/sing/viewHelper";
 
 export class EraseVolumeIdleState

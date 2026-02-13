@@ -1,4 +1,4 @@
-import type { TSESLint } from "@typescript-eslint/utils";
+import { TSESLint } from "@typescript-eslint/utils";
 
 /**
  * Vueテンプレート内でもESLintルールを適用するためのヘルパー関数。

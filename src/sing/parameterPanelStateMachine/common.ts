@@ -1,8 +1,8 @@
-import type { ComputedRef, Ref } from "vue";
+import { ComputedRef, Ref } from "vue";
 import type { Store } from "@/store";
-import type { StateDefinitions } from "@/sing/stateMachine";
+import { StateDefinitions } from "@/sing/stateMachine";
 import type { CursorState } from "@/sing/viewHelper";
-import type { TrackId } from "@/type/preload";
+import { TrackId } from "@/type/preload";
 import type { Tempo } from "@/domain/project/type";
 
 export type PositionOnParameterPanel = {

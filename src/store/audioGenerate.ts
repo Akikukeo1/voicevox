@@ -1,4 +1,4 @@
-import type {
+import {
   AudioItem,
   AudioStoreState,
   EditorAudioQuery,

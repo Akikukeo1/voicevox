@@ -1,6 +1,6 @@
-import { computed, type ComputedRef, ref, watch } from "vue";
+import { computed, ComputedRef, ref, watch } from "vue";
 import { useCommandOrControlKey, useShiftKey } from "./useModifierKey";
-import type {
+import {
   ComputedRefs,
   IdleStateId,
   Input,

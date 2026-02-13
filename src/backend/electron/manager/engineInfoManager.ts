@@ -6,15 +6,15 @@ import { dialog } from "electron"; // FIXME: ここでelectronをimportするの
 
 import { getConfigManager } from "../electronConfig";
 import {
-  type EngineInfo,
-  type EngineDirValidationResult,
-  type MinimumEngineManifestType,
-  type EngineId,
+  EngineInfo,
+  EngineDirValidationResult,
+  MinimumEngineManifestType,
+  EngineId,
   minimumEngineManifestSchema,
 } from "@/type/preload";
-import type { AltPortInfos } from "@/store/type";
+import { AltPortInfos } from "@/store/type";
 import { loadEnvEngineInfos } from "@/domain/defaultEngine/envEngineInfo";
-import { failure, type Result, success } from "@/type/result";
+import { failure, Result, success } from "@/type/result";
 import { createLogger } from "@/helpers/log";
 
 const log = createLogger("EngineInfoManager");

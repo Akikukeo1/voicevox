@@ -1,5 +1,5 @@
 import Encoding from "encoding-japanese";
-import type { Encoding as EncodingType } from "@/type/preload";
+import { Encoding as EncodingType } from "@/type/preload";
 import { clamp } from "@/sing/utility";
 
 export type WavFormat = "signedInt16" | "float32";
