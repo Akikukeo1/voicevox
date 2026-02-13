@@ -42,9 +42,15 @@ export class ExhaustiveError extends Error {
 }
 
 /**
- * 到達しないであろうコードに到達したことを示すエラー。
- * TODO: すべてのunreachableをUnreachableErrorに統一する
+ * 実行時に到達してはならない分岐を表すエラー。
+ *
+ * - switch の網羅性チェック崩壊
+ * - 開発者が保証している不変条件違反
+ *
+ * nullable検査や入力バリデーション用途には
+ * `assertNonNullable` や `ensureNotNullish` を使用する。
  */
+// TODO: 到達不能分岐には UnreachableError を使用するよう統一する
 export class UnreachableError extends Error {
   constructor(message?: string) {
     super(message || "Unreachable code was executed.");
