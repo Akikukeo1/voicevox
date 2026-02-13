@@ -77,7 +77,14 @@ export class Metronome {
     const remainder = offsetIntoBeatSeconds % secondsPerBeat;
     const timeToNextBeat = remainder === 0 ? 0 : secondsPerBeat - remainder;
     this.nextNoteTime = this.audioCtx.currentTime + timeToNextBeat;
-    this.beatIndex = ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) + this.beatsPerMeasure) % this.beatsPerMeasure;
+    // If next note is immediate (on the beat), use the current beat index.
+    // Otherwise, advance to the next beat index.
+    const normalizedInitial = ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) + this.beatsPerMeasure) % this.beatsPerMeasure;
+    if (timeToNextBeat === 0) {
+      this.beatIndex = normalizedInitial;
+    } else {
+      this.beatIndex = (normalizedInitial + 1) % this.beatsPerMeasure;
+    }
     this.isRunning = true;
     this.intervalId = window.setInterval(() => this.scheduler(), this.lookahead);
   }
