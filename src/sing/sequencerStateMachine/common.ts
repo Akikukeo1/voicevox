@@ -1,14 +1,14 @@
-import type { ComputedRef, Ref } from "vue";
-import type { StateDefinitions } from "@/sing/stateMachine";
-import type { Rect } from "@/sing/utility";
+import { ComputedRef, Ref } from "vue";
+import { StateDefinitions } from "@/sing/stateMachine";
+import { Rect } from "@/sing/utility";
 import {
-  type CursorState,
+  CursorState,
   PREVIEW_SOUND_DURATION,
-  type PreviewMode,
+  PreviewMode,
 } from "@/sing/viewHelper";
-import type { Store } from "@/store";
-import type { SequencerEditTarget } from "@/store/type";
-import type { NoteId, TrackId } from "@/type/preload";
+import { Store } from "@/store";
+import { SequencerEditTarget } from "@/store/type";
+import { NoteId, TrackId } from "@/type/preload";
 import type { Note, Tempo } from "@/domain/project/type";
 
 export type PositionOnSequencer = {

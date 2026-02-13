@@ -1,5 +1,5 @@
-import type { SetNextState, State } from "@/sing/stateMachine";
-import type {
+import { SetNextState, State } from "@/sing/stateMachine";
+import {
   Context,
   Input,
   SequencerStateDefinitions,

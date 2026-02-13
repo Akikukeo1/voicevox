@@ -1,7 +1,7 @@
-import type { Patch } from "immer";
+import { Patch } from "immer";
 import { z } from "zod";
-import type { Project as UfProject } from "@sevenc-nanashi/utaformatix-ts";
-import type {
+import { Project as UfProject } from "@sevenc-nanashi/utaformatix-ts";
+import {
   MutationTree,
   MutationsBase,
   GettersBase,
@@ -11,8 +11,8 @@ import type {
   Store,
   DotNotationActionContext,
 } from "./vuex";
-import { createCommandMutationTree, type PayloadRecipeTree } from "./command";
-import type {
+import { createCommandMutationTree, PayloadRecipeTree } from "./command";
+import {
   AccentPhrase,
   AudioQuery,
   EngineManifest,
@@ -22,7 +22,7 @@ import type {
   FrameAudioQuery,
   Note as NoteForRequestToEngine,
 } from "@/openapi";
-import type {
+import {
   CharacterInfo,
   DefaultStyleId,
   AcceptRetrieveTelemetryStatus,
@@ -55,16 +55,16 @@ import type {
   CommandId,
   TrackId,
 } from "@/type/preload";
-import type { IEngineConnectorFactory } from "@/infrastructures/EngineConnector";
-import type {
+import { IEngineConnectorFactory } from "@/infrastructures/EngineConnector";
+import {
   TextDialogResult,
   NotifyAndNotShowAgainButtonOption,
   MessageDialogOptions,
   ConfirmDialogOptions,
   WarningDialogOptions,
 } from "@/components/Dialog/Dialog";
-import type { HotkeySettingType } from "@/domain/hotkeyAction";
-import type {
+import { HotkeySettingType } from "@/domain/hotkeyAction";
+import {
   MultiFileProjectFormat,
   SingleFileProjectFormat,
 } from "@/sing/utaformatixProject/utils";
@@ -75,8 +75,8 @@ import type {
   TimeSignature,
   Track,
 } from "@/domain/project/type";
-import type { LatestProjectType } from "@/infrastructures/projectFile/type";
-import type { WavFormat } from "@/helpers/fileDataGenerator";
+import { LatestProjectType } from "@/infrastructures/projectFile/type";
+import { WavFormat } from "@/helpers/fileDataGenerator";
 
 /**
  * エディタ用のAudioQuery

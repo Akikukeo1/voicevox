@@ -19,9 +19,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type ComputedRef } from "vue";
+import { computed, ComputedRef } from "vue";
 import { useStore } from "@/store";
-import type { ToolbarButtonTagType } from "@/type/preload";
+import { ToolbarButtonTagType } from "@/type/preload";
 import { getToolbarButtonName } from "@/store/utility";
 import { useHotkeyManager } from "@/plugins/hotkeyPlugin";
 import { handlePossiblyNotMorphableError } from "@/store/audioGenerate";

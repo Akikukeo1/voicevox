@@ -1,17 +1,17 @@
-import type {
-  EnginePackageCurrentInfo,
-  EnginePackageLatestInfo,
+import {
+  EnginePackageLocalInfo,
+  EnginePackageRemoteInfo,
 } from "@/backend/electron/engineAndVvppController";
 import type { EngineId } from "@/type/preload";
-import type { RuntimeTarget } from "@/domain/defaultEngine/latestDefaultEngine";
+import type { RuntimeTarget } from "@/domain/defaultEngine/latetDefaultEngine";
 
 export interface WelcomeSandbox {
   installEngine(obj: {
     engineId: EngineId;
     target: RuntimeTarget;
   }): Promise<void>;
-  fetchEnginePackageLocalInfos(): Promise<EnginePackageCurrentInfo[]>;
-  fetchLatestEnginePackageRemoteInfos(): Promise<EnginePackageLatestInfo[]>;
+  fetchEnginePackageLocalInfos(): Promise<EnginePackageLocalInfo[]>;
+  fetchLatestEnginePackageRemoteInfos(): Promise<EnginePackageRemoteInfo[]>;
   launchMainWindow(): Promise<void>;
   getCurrentTheme(): Promise<string>;
   registerIpcHandler(listeners: {

@@ -1,4 +1,4 @@
-import { createPartialStore, type DotNotationDispatch } from "../vuex";
+import { createPartialStore, DotNotationDispatch } from "../vuex";
 import {
   executeWritePromiseOrDialog,
   promptProjectSaveFilePath,
@@ -6,7 +6,7 @@ import {
   writeProjectFile,
 } from "./saveProjectHelper";
 import { createUILockAction } from "@/store/ui";
-import type {
+import {
   AllActions,
   AudioItem,
   ProjectStoreState,
@@ -15,7 +15,7 @@ import type {
 import { TrackId } from "@/type/preload";
 import path from "@/helpers/path";
 import { getValueOrThrow, ResultError } from "@/type/result";
-import type { LatestProjectType } from "@/infrastructures/projectFile/type";
+import { LatestProjectType } from "@/infrastructures/projectFile/type";
 import { ProjectFileFormatError } from "@/infrastructures/projectFile/type";
 import {
   createDefaultTempo,
@@ -23,8 +23,8 @@ import {
   createDefaultTrack,
   DEFAULT_TPQN,
 } from "@/sing/domain";
-import type { EditorType } from "@/type/preload";
-import { type IsEqual, UnreachableError } from "@/type/utility";
+import { EditorType } from "@/type/preload";
+import { IsEqual, UnreachableError } from "@/type/utility";
 import {
   showAlertDialog,
   showMessageDialog,

@@ -109,12 +109,7 @@ import BaseToggleGroup from "@/components/Base/BaseToggleGroup.vue";
 import BaseToggleGroupItem from "@/components/Base/BaseToggleGroupItem.vue";
 import BaseScrollArea from "@/components/Base/BaseScrollArea.vue";
 import { useStore } from "@/store";
-import type {
-  CharacterInfo,
-  SpeakerId,
-  StyleId,
-  StyleInfo,
-} from "@/type/preload";
+import { CharacterInfo, SpeakerId, StyleId, StyleInfo } from "@/type/preload";
 import { filterCharacterInfosByStyleType } from "@/store/utility";
 import { debounce } from "@/helpers/timer";
 

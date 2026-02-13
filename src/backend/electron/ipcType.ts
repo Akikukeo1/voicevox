@@ -1,4 +1,4 @@
-import type {
+import {
   ConfigType,
   EngineDirValidationResult,
   EngineId,
@@ -9,9 +9,9 @@ import type {
   TextAsset,
   ToolbarSettingType,
 } from "@/type/preload";
-import type { AltPortInfos } from "@/store/type";
-import type { Result } from "@/type/result";
-import type { HotkeySettingType } from "@/domain/hotkeyAction";
+import { AltPortInfos } from "@/store/type";
+import { Result } from "@/type/result";
+import { HotkeySettingType } from "@/domain/hotkeyAction";
 
 /**
  * invoke, handle

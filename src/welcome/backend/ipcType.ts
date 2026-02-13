@@ -1,9 +1,9 @@
-import type {
-  EnginePackageCurrentInfo,
-  EnginePackageLatestInfo,
+import {
+  EnginePackageLocalInfo,
+  EnginePackageRemoteInfo,
 } from "@/backend/electron/engineAndVvppController";
-import type { EngineId } from "@/type/preload";
-import type { RuntimeTarget } from "@/domain/defaultEngine/latestDefaultEngine";
+import { EngineId } from "@/type/preload";
+import type { RuntimeTarget } from "@/domain/defaultEngine/latetDefaultEngine";
 
 /**
  * invoke, handle
@@ -20,11 +20,11 @@ export type WelcomeIpcIHData = {
   };
   FETCH_ENGINE_PACKAGE_LOCAL_INFOS: {
     args: [];
-    return: EnginePackageCurrentInfo[];
+    return: EnginePackageLocalInfo[];
   };
   FETCH_LATEST_ENGINE_PACKAGE_REMOTE_INFOS: {
     args: [];
-    return: EnginePackageLatestInfo[];
+    return: EnginePackageRemoteInfo[];
   };
 
   GET_CURRENT_THEME: {

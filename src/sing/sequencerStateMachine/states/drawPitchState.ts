@@ -1,12 +1,12 @@
-import type { SetNextState, State } from "@/sing/stateMachine";
-import type {
+import { SetNextState, State } from "@/sing/stateMachine";
+import {
   Context,
   IdleStateId,
   Input,
   PositionOnSequencer,
   SequencerStateDefinitions,
 } from "@/sing/sequencerStateMachine/common";
-import type { TrackId } from "@/type/preload";
+import { TrackId } from "@/type/preload";
 import {
   applyGaussianFilter,
   applySmoothTransitions,

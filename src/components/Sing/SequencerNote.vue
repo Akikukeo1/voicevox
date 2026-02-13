@@ -71,11 +71,11 @@ import {
   getKeyBaseHeight,
   tickToBaseX,
   noteNumberToBaseY,
-  type PreviewMode,
+  PreviewMode,
   getDoremiFromNoteNumber,
 } from "@/sing/viewHelper";
 import ContextMenu, {
-  type ContextMenuItemData,
+  ContextMenuItemData,
 } from "@/components/Menu/ContextMenu/Container.vue";
 
 const props = defineProps<{

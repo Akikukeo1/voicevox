@@ -20,7 +20,7 @@ import {
 
 import { DictMock } from "./dictMock";
 import { cloneWithUnwrapProxy } from "@/helpers/cloneWithUnwrapProxy";
-import type {
+import {
   AccentPhrase,
   AccentPhrasesRequest,
   AudioQuery,

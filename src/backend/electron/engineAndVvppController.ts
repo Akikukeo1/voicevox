@@ -7,19 +7,15 @@ import { getRuntimeInfoManager } from "./manager/RuntimeInfoManager";
 import { getVvppManager } from "./manager/vvppManager";
 import { getMainWindowManager } from "./manager/windowManager/main";
 import { MultiDownloader } from "./multiDownloader";
+import { EngineId, EngineInfo, engineSettingSchema } from "@/type/preload";
 import {
-  type EngineId,
-  type EngineInfo,
-  engineSettingSchema,
-} from "@/type/preload";
-import {
-  type PackageInfo,
+  PackageInfo,
   fetchLatestDefaultEngineInfo,
-} from "@/domain/defaultEngine/latestDefaultEngine";
-import type { RuntimeTarget } from "@/domain/defaultEngine/latestDefaultEngine";
+} from "@/domain/defaultEngine/latetDefaultEngine";
+import type { RuntimeTarget } from "@/domain/defaultEngine/latetDefaultEngine";
 import { loadEnvEngineInfos } from "@/domain/defaultEngine/envEngineInfo";
 import { UnreachableError } from "@/type/utility";
-import type { ProgressCallback } from "@/helpers/progressHelper";
+import { ProgressCallback } from "@/helpers/progressHelper";
 import { createLogger } from "@/helpers/log";
 import { DisplayableError, errorToMessage } from "@/helpers/errorHelper";
 import { isLinux, isMac, isWindows } from "@/helpers/platform";
@@ -32,7 +28,7 @@ export type EnginePackageBase = {
 };
 
 /** ローカルのパッケージインストール状況 */
-export type EnginePackageCurrentInfo = {
+export type EnginePackageLocalInfo = {
   package: EnginePackageBase;
   installed:
     | { status: "notInstalled" }
@@ -40,7 +36,7 @@ export type EnginePackageCurrentInfo = {
 };
 
 /** オンラインで取得したパッケージ最新情報 */
-export type EnginePackageLatestInfo = {
+export type EnginePackageRemoteInfo = {
   package: EnginePackageBase;
   availableRuntimeTargets: {
     target: RuntimeTarget;
@@ -210,7 +206,7 @@ export class EngineAndVvppController {
 
   private getInstalledEngineStatus(
     engineId: EngineId,
-  ): EnginePackageCurrentInfo["installed"] {
+  ): EnginePackageLocalInfo["installed"] {
     const isInstalled = this.engineInfoManager.hasEngineInfo(engineId);
     if (!isInstalled) {
       return { status: "notInstalled" };
@@ -227,7 +223,7 @@ export class EngineAndVvppController {
   /**
    * オフラインでデフォルトエンジンのインストール状況を取得する。
    */
-  getEnginePackageLocalInfos(): EnginePackageCurrentInfo[] {
+  getEnginePackageLocalInfos(): EnginePackageLocalInfo[] {
     return this.getDownloadableEnvEngineInfos().map((envEngineInfo) => ({
       package: {
         engineName: envEngineInfo.name,
@@ -241,9 +237,9 @@ export class EngineAndVvppController {
    * オンラインで最新のエンジンパッケージの情報や、そのエンジンのインストール状況を取得する。
    */
   async fetchLatestEnginePackageRemoteInfos(): Promise<
-    EnginePackageLatestInfo[]
+    EnginePackageRemoteInfo[]
   > {
-    const statuses: EnginePackageLatestInfo[] = [];
+    const statuses: EnginePackageRemoteInfo[] = [];
 
     for (const envEngineInfo of this.getDownloadableEnvEngineInfos()) {
       const latestUrl = envEngineInfo.latestUrl;
@@ -255,7 +251,7 @@ export class EngineAndVvppController {
         continue;
       }
 
-      const availableRuntimeTargets: EnginePackageLatestInfo["availableRuntimeTargets"] =
+      const availableRuntimeTargets: EnginePackageRemoteInfo["availableRuntimeTargets"] =
         Object.entries(latestInfo.packages)
           .map(([target, packageInfo]) => ({ target, packageInfo }))
           .filter((runtimeTargetInfo) =>
