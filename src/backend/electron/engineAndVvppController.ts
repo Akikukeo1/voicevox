@@ -31,7 +31,7 @@ export type EnginePackageBase = {
   engineId: EngineId;
 };
 
-/** 現在ローカルのパッケージインストール状況（旧: EnginePackageLocalInfo） */
+/** ローカルのパッケージインストール状況 */
 export type EnginePackageCurrentInfo = {
   package: EnginePackageBase;
   installed:
