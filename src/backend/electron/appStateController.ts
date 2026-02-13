@@ -100,8 +100,8 @@ export class AppStateController {
    * - `activeWindow` を `main` に設定する
    * - エンジン起動やウィンドウ生成に失敗すると例外を投げる可能性がある
    *
-   * 備考:
-   * - この関数はアプリ起動フローの一部であり、UIスレッドと同期的な前提で呼ばれることを想定している。
+  * 備考:
+  * - この関数はアプリ起動フローの一部であり、メインプロセスの同期的なフロー内で呼ばれることを想定している。
    */
   private async launchMainWindow() {
     this.activeWindow = "main";
