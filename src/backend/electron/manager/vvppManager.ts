@@ -200,10 +200,7 @@ export class VvppManager {
     await Promise.all(
       [...this.willDeleteEngineIds].map(async (engineId) => {
         const deletingEngineDir = await this.getInstalledEngineDir(engineId);
-        ensureNotNullish(
-          deletingEngineDir,
-          "エンジンが見つかりませんでした。",
-        );
+        ensureNotNullish(deletingEngineDir, "エンジンが見つかりませんでした。");
 
         try {
           await deleteDirWithRetry(deletingEngineDir);
