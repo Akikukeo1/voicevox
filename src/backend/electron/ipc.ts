@@ -18,6 +18,15 @@ import { ensureNotNullish } from "@/type/utility";
  * 設計上の注意点:
  * - マルチウィンドウ同時起動をフルサポートする設計にはなっていないため、将来的に複雑化する場合は
  *   別途チャネル分離やオーソリティチェックを強化すること。
+ *
+ * 使用例（簡易）:
+ * - 型定義側（`ipcType.ts`）でチャネルを定義する
+ *   export type MyIpc = IpcIHData & {
+ *     MY_CHANNEL: { args: [value: number]; return: string };
+ *   };
+ * - 登録側: `registerIpcMainHandle<MyIpc>(win, { MY_CHANNEL: (e, v) => v.toString() })`
+ *
+ * 関連: 型定義は `ipcType.ts` の `IpcIHData` / `IpcSOData` を参照してください。
  */
 const log = createLogger("ipc");
 
