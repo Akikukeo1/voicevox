@@ -64,6 +64,7 @@ export class Metronome {
     offsetIntoBeatSeconds: number,
     secondsPerBeat: number,
     initialBeatIndex: number,
+    beatsPerMeasure?: number,
   ) {
     console.debug("Metronome.startAligned", { offsetIntoBeatSeconds, secondsPerBeat, initialBeatIndex });
     this.ensureAudio();
@@ -73,13 +74,15 @@ export class Metronome {
     }
     if (this.isRunning) this.stop();
     this.secondsPerBeat = secondsPerBeat;
+    if (beatsPerMeasure != null) this.beatsPerMeasure = beatsPerMeasure;
     // 次のノート時刻を現在時刻から計算
     const remainder = offsetIntoBeatSeconds % secondsPerBeat;
     const timeToNextBeat = remainder === 0 ? 0 : secondsPerBeat - remainder;
     this.nextNoteTime = this.audioCtx.currentTime + timeToNextBeat;
-    // If next note is immediate (on the beat), use the current beat index.
-    // Otherwise, advance to the next beat index.
-    const normalizedInitial = ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) + this.beatsPerMeasure) % this.beatsPerMeasure;
+    // Compute upcoming beat index within the measure.
+    const normalizedInitial =
+      ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) + this.beatsPerMeasure) % this.beatsPerMeasure;
+    // If next note is immediate (on the beat), schedule that beat. Otherwise schedule the following beat.
     if (timeToNextBeat === 0) {
       this.beatIndex = normalizedInitial;
     } else {

@@ -459,7 +459,12 @@ const toggleMetronome = () => {
     const secondsPerBeat =
       tickToSecond(beatStartTick + ticksPerBeat, tempos.value, tpqn.value) -
       tickToSecond(beatStartTick, tempos.value, tpqn.value);
-    globalMetronome.startAligned(offsetIntoBeatSeconds, secondsPerBeat, initialBeatIndex);
+    globalMetronome.startAligned(
+      offsetIntoBeatSeconds,
+      secondsPerBeat,
+      initialBeatIndex,
+      currentTimeSignature.value.beats,
+    );
   } else {
     globalMetronome.stop();
   }
