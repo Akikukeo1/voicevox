@@ -39,7 +39,7 @@ export type EnginePackageCurrentInfo = {
     | { status: "installed"; installedVersion: string };
 };
 
-/** オンラインで取得したパッケージ最新情報（旧: EnginePackageRemoteInfo） */
+/** オンラインで取得したパッケージ最新情報 */
 export type EnginePackageLatestInfo = {
   package: EnginePackageBase;
   availableRuntimeTargets: {
