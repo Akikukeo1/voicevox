@@ -91,28 +91,29 @@ import MenuBar from "./MenuBar.vue";
 import WelcomeHeader from "./WelcomeHeader.vue";
 import EngineCard from "./EngineCard.vue";
 import ErrorBoundary from "@/components/ErrorBoundary.vue";
-import {
+import type {
   EnginePackageBase,
-  EnginePackageLocalInfo,
-  EnginePackageRemoteInfo,
+  EnginePackageCurrentInfo,
+  EnginePackageLatestInfo,
 } from "@/backend/electron/engineAndVvppController";
-import { EngineId } from "@/type/preload";
-import type { RuntimeTarget } from "@/domain/defaultEngine/latetDefaultEngine";
+import type { EngineId } from "@/type/preload";
+import type { RuntimeTarget } from "@/domain/defaultEngine/latestDefaultEngine";
 import { setThemeToCss } from "@/domain/dom";
 import { themes } from "@/domain/theme";
 import BaseButton from "@/components/Base/BaseButton.vue";
 import BaseScrollArea from "@/components/Base/BaseScrollArea.vue";
 import BaseDocumentView from "@/components/Base/BaseDocumentView.vue";
 import { UnreachableError } from "@/type/utility";
+import { showErrorDialog } from "@/components/Dialog/Dialog";
 
 type DisplayEngineInfo = {
   package: EnginePackageBase;
-  localInfo: EnginePackageLocalInfo;
-  remoteInfo: EnginePackageRemoteInfo | undefined;
+  localInfo: EnginePackageCurrentInfo;
+  remoteInfo: EnginePackageLatestInfo | undefined;
 };
 
-const localEngineInfos = ref<EnginePackageLocalInfo[] | undefined>(undefined);
-const remoteEngineInfos = ref<EnginePackageRemoteInfo[] | undefined>(undefined);
+const localEngineInfos = ref<EnginePackageCurrentInfo[] | undefined>(undefined);
+const remoteEngineInfos = ref<EnginePackageLatestInfo[] | undefined>(undefined);
 const loadingEngineInfosState = ref<
   "uninitialized" | "loadingLocal" | "fetchingLatest" | "fetched"
 >("uninitialized");
@@ -233,7 +234,7 @@ const installEngine = async (engineId: EngineId) => {
       `Engine package ${engineId} installation failed`,
       error,
     );
-    throw error;
+    await showErrorDialog("エンジンのインストールに失敗しました", error);
   } finally {
     clearEngineProgress(engineId);
     void fetchInstalledEngineInfos();

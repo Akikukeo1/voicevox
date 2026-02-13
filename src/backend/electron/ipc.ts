@@ -1,6 +1,6 @@
-import { BrowserWindow, ipcMain, IpcMainInvokeEvent } from "electron";
+import { type BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron";
 import { wrapToTransferableResult } from "./transferableResultHelper";
-import { BaseIpcData } from "./ipcType";
+import type { BaseIpcData } from "./ipcType";
 import { createLogger } from "@/helpers/log";
 import { objectEntries } from "@/helpers/typedEntries";
 import { ensureNotNullish } from "@/type/utility";
@@ -28,6 +28,7 @@ export function registerIpcMainHandle<Ipc extends BaseIpcData>(
   listeners: IpcMainHandle<Ipc>,
 ): void {
   objectEntries(listeners).forEach(([channel, listener]) => {
+    const channelStr = String(channel);
     const errorHandledListener: typeof listener = (event, ...args) => {
       if (win.isDestroyed() || event.sender.id !== win.webContents.id) {
         return delegated;
@@ -41,14 +42,12 @@ export function registerIpcMainHandle<Ipc extends BaseIpcData>(
 
       return wrapToTransferableResult(() => listener(event, ...args));
     };
-    if (ipcHandlers.has(channel as string)) {
-      ensureNotNullish(ipcHandlers.get(channel as string)).push(
-        errorHandledListener,
-      );
+    if (ipcHandlers.has(channelStr)) {
+      ensureNotNullish(ipcHandlers.get(channelStr)).push(errorHandledListener);
     } else {
-      ipcHandlers.set(channel as string, [errorHandledListener]);
-      ipcMain.handle(channel as string, async (event, ...args: unknown[]) => {
-        const handlers = ipcHandlers.get(channel as string);
+      ipcHandlers.set(channelStr, [errorHandledListener]);
+      ipcMain.handle(channelStr, async (event, ...args: unknown[]) => {
+        const handlers = ipcHandlers.get(channelStr);
         if (!handlers) {
           throw new Error(
             `No handlers registered for channel: ${String(channel)}`,
