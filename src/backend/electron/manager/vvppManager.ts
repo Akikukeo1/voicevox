@@ -12,7 +12,7 @@ import { VvppFileExtractor } from "@/backend/electron/vvppFile";
 import type { ProgressCallback } from "@/helpers/progressHelper";
 import { createLogger } from "@/helpers/log";
 import { isWindows } from "@/helpers/platform";
-import { ensureNotNullish } from "@/type/utility";
+import { assertNonNullable } from "@/type/utility";
 import { Mutex } from "@/helpers/mutex";
 
 const log = createLogger("VvppManager");
@@ -200,7 +200,10 @@ export class VvppManager {
     await Promise.all(
       [...this.willDeleteEngineIds].map(async (engineId) => {
         const deletingEngineDir = await this.getInstalledEngineDir(engineId);
-        ensureNotNullish(deletingEngineDir, "エンジンが見つかりませんでした。");
+        assertNonNullable(
+          deletingEngineDir,
+          "エンジンが見つかりませんでした。",
+        );
 
         try {
           await deleteDirWithRetry(deletingEngineDir);
@@ -237,7 +240,7 @@ export class VvppManager {
     const engineId = extractedEngineFiles.getManifest().uuid;
 
     const engineDir = await this.getInstalledEngineDir(engineId);
-    ensureNotNullish(
+    assertNonNullable(
       engineDir,
       "Engine directory not found after hasOldEngine check",
     );
