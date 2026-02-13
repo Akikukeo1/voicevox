@@ -15,8 +15,8 @@ import {
 import {
   type PackageInfo,
   fetchLatestDefaultEngineInfo,
-} from "@/domain/defaultEngine/latetDefaultEngine";
-import type { RuntimeTarget } from "@/domain/defaultEngine/latetDefaultEngine";
+} from "@/domain/defaultEngine/latestDefaultEngine";
+import type { RuntimeTarget } from "@/domain/defaultEngine/latestDefaultEngine";
 import { loadEnvEngineInfos } from "@/domain/defaultEngine/envEngineInfo";
 import { UnreachableError } from "@/type/utility";
 import type { ProgressCallback } from "@/helpers/progressHelper";
@@ -31,16 +31,16 @@ export type EnginePackageBase = {
   engineId: EngineId;
 };
 
-/** ローカルのパッケージインストール状況 */
-export type EnginePackageLocalInfo = {
+/** 現在ローカルのパッケージインストール状況（旧: EnginePackageLocalInfo） */
+export type EnginePackageCurrentInfo = {
   package: EnginePackageBase;
   installed:
     | { status: "notInstalled" }
     | { status: "installed"; installedVersion: string };
 };
 
-/** オンラインで取得したパッケージ最新情報 */
-export type EnginePackageRemoteInfo = {
+/** オンラインで取得したパッケージ最新情報（旧: EnginePackageRemoteInfo） */
+export type EnginePackageLatestInfo = {
   package: EnginePackageBase;
   availableRuntimeTargets: {
     target: RuntimeTarget;
@@ -210,7 +210,7 @@ export class EngineAndVvppController {
 
   private getInstalledEngineStatus(
     engineId: EngineId,
-  ): EnginePackageLocalInfo["installed"] {
+  ): EnginePackageCurrentInfo["installed"] {
     const isInstalled = this.engineInfoManager.hasEngineInfo(engineId);
     if (!isInstalled) {
       return { status: "notInstalled" };
@@ -227,7 +227,7 @@ export class EngineAndVvppController {
   /**
    * オフラインでデフォルトエンジンのインストール状況を取得する。
    */
-  getEnginePackageLocalInfos(): EnginePackageLocalInfo[] {
+  getEnginePackageLocalInfos(): EnginePackageCurrentInfo[] {
     return this.getDownloadableEnvEngineInfos().map((envEngineInfo) => ({
       package: {
         engineName: envEngineInfo.name,
@@ -241,9 +241,9 @@ export class EngineAndVvppController {
    * オンラインで最新のエンジンパッケージの情報や、そのエンジンのインストール状況を取得する。
    */
   async fetchLatestEnginePackageRemoteInfos(): Promise<
-    EnginePackageRemoteInfo[]
+    EnginePackageLatestInfo[]
   > {
-    const statuses: EnginePackageRemoteInfo[] = [];
+    const statuses: EnginePackageLatestInfo[] = [];
 
     for (const envEngineInfo of this.getDownloadableEnvEngineInfos()) {
       const latestUrl = envEngineInfo.latestUrl;
@@ -255,7 +255,7 @@ export class EngineAndVvppController {
         continue;
       }
 
-      const availableRuntimeTargets: EnginePackageRemoteInfo["availableRuntimeTargets"] =
+      const availableRuntimeTargets: EnginePackageLatestInfo["availableRuntimeTargets"] =
         Object.entries(latestInfo.packages)
           .map(([target, packageInfo]) => ({ target, packageInfo }))
           .filter((runtimeTargetInfo) =>
