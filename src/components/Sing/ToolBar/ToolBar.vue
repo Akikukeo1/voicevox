@@ -428,43 +428,35 @@ const toggleMetronome = () => {
   if (isMetronomeOn.value && nowPlaying.value) {
     // 再生中にトグルした場合はプレイヘッド位置に同期して開始
     const playheadTicksValue = playheadTicks.value;
-    // 1拍あたりのtick数: tpqn * (4 / beatType)
-    const beatType = currentTimeSignature.value.beatType;
-    // ticks per beat according to current time signature and tpqn
-    const ticksPerBeat = getBeatDuration(beatType, tpqn.value);
-    // determine current measure start tick
-    const currentMeasureNumber = tickToMeasureNumber(
-      playheadTicksValue,
-      timeSignatures.value,
-      tpqn.value,
-    );
-    const measureStartTick = measureNumberToTick(
-      Math.floor(currentMeasureNumber),
-      timeSignatures.value,
-      tpqn.value,
-    );
-    const ticksIntoMeasure = playheadTicksValue - measureStartTick;
-    const ticksIntoBeat = ticksIntoMeasure % ticksPerBeat;
-    const initialBeatIndex = Math.floor(ticksIntoMeasure / ticksPerBeat) % currentTimeSignature.value.beats;
+      // use PlayheadPositionDisplay のロジックを参照して、小節.拍の計算を行う
+      const tpqnVal = tpqn.value;
+      const tsPositions = getTimeSignaturePositions(timeSignatures.value, tpqnVal);
+      const timeSignaturesWithPos = timeSignatures.value.map((v, i) => ({
+        ...v,
+        position: tsPositions[i],
+      }));
+      const mb = ticksToMeasuresBeats(playheadTicksValue, timeSignaturesWithPos, tpqnVal);
+      const beatInteger = Math.floor(mb.beats);
+      const beatFraction = mb.beats - beatInteger; // 0.. <1
+      const beatType = currentTimeSignature.value.beatType;
+      const ticksPerBeat = getBeatDuration(beatType, tpqnVal);
+      const ticksIntoBeat = Math.round(beatFraction * ticksPerBeat);
+      const initialBeatIndex = (beatInteger - 1) % currentTimeSignature.value.beats; // convert 1-based to 0-based
 
-    // compute seconds: offset into beat = seconds(playheadTick) - seconds(beatStartTick)
-    const beatStartTick = playheadTicksValue - ticksIntoBeat;
-    const offsetIntoBeatSeconds = tickToSecond(
-      playheadTicksValue,
-      tempos.value,
-      tpqn.value,
-    ) -
-      tickToSecond(beatStartTick, tempos.value, tpqn.value);
+      const beatStartTick = playheadTicksValue - ticksIntoBeat;
+      const offsetIntoBeatSeconds =
+        tickToSecond(playheadTicksValue, tempos.value, tpqnVal) -
+        tickToSecond(beatStartTick, tempos.value, tpqnVal);
+      const secondsPerBeat =
+        tickToSecond(beatStartTick + ticksPerBeat, tempos.value, tpqnVal) -
+        tickToSecond(beatStartTick, tempos.value, tpqnVal);
 
-    const secondsPerBeat =
-      tickToSecond(beatStartTick + ticksPerBeat, tempos.value, tpqn.value) -
-      tickToSecond(beatStartTick, tempos.value, tpqn.value);
-    globalMetronome.startAligned(
-      offsetIntoBeatSeconds,
-      secondsPerBeat,
-      initialBeatIndex,
-      currentTimeSignature.value.beats,
-    );
+      globalMetronome.startAligned(
+        offsetIntoBeatSeconds,
+        secondsPerBeat,
+        initialBeatIndex,
+        currentTimeSignature.value.beats,
+      );
   } else {
     globalMetronome.stop();
   }
