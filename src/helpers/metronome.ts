@@ -16,7 +16,8 @@ export class Metronome {
 
   private ensureAudio() {
     if (!this.audioCtx) {
-      this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.audioCtx = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
       this.gainNode = this.audioCtx.createGain();
       this.gainNode.gain.value = 0.5;
       this.gainNode.connect(this.audioCtx.destination);
@@ -51,7 +52,10 @@ export class Metronome {
     this.isRunning = true;
     this.nextNoteTime = this.audioCtx.currentTime;
     this.beatIndex = 0;
-    this.intervalId = window.setInterval(() => this.scheduler(), this.lookahead);
+    this.intervalId = window.setInterval(
+      () => this.scheduler(),
+      this.lookahead,
+    );
   }
 
   /**
@@ -66,7 +70,11 @@ export class Metronome {
     initialBeatIndex: number,
     beatsPerMeasure?: number,
   ) {
-    console.debug("Metronome.startAligned", { offsetIntoBeatSeconds, secondsPerBeat, initialBeatIndex });
+    console.debug("Metronome.startAligned", {
+      offsetIntoBeatSeconds,
+      secondsPerBeat,
+      initialBeatIndex,
+    });
     this.ensureAudio();
     if (!this.audioCtx || !this.gainNode) return;
     if (this.audioCtx.state === "suspended") {
@@ -81,7 +89,9 @@ export class Metronome {
     this.nextNoteTime = this.audioCtx.currentTime + timeToNextBeat;
     // Compute upcoming beat index within the measure.
     const normalizedInitial =
-      ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) + this.beatsPerMeasure) % this.beatsPerMeasure;
+      ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) +
+        this.beatsPerMeasure) %
+      this.beatsPerMeasure;
     // If next note is immediate (on the beat), schedule that beat. Otherwise schedule the following beat.
     if (timeToNextBeat === 0) {
       this.beatIndex = normalizedInitial;
@@ -89,7 +99,10 @@ export class Metronome {
       this.beatIndex = (normalizedInitial + 1) % this.beatsPerMeasure;
     }
     this.isRunning = true;
-    this.intervalId = window.setInterval(() => this.scheduler(), this.lookahead);
+    this.intervalId = window.setInterval(
+      () => this.scheduler(),
+      this.lookahead,
+    );
   }
 
   stop() {
@@ -106,10 +119,17 @@ export class Metronome {
     if (!this.audioCtx) return;
     // debug
     // console.debug("Metronome.scheduler currentTime", this.audioCtx.currentTime, "nextNoteTime", this.nextNoteTime);
-    while (this.nextNoteTime < this.audioCtx.currentTime + this.scheduleAheadTime) {
+    while (
+      this.nextNoteTime <
+      this.audioCtx.currentTime + this.scheduleAheadTime
+    ) {
       const isAccent = this.beatIndex % this.beatsPerMeasure === 0;
       // debug
-      console.debug("Metronome.schedule", { time: this.nextNoteTime, accent: isAccent, beatIndex: this.beatIndex });
+      console.debug("Metronome.schedule", {
+        time: this.nextNoteTime,
+        accent: isAccent,
+        beatIndex: this.beatIndex,
+      });
       this.scheduleClick(this.nextNoteTime, isAccent);
       this.nextNoteTime += this.secondsPerBeat;
       this.beatIndex = (this.beatIndex + 1) % this.beatsPerMeasure;
@@ -118,7 +138,11 @@ export class Metronome {
 
   private scheduleClick(time: number, accent: boolean) {
     if (!this.audioCtx || !this.gainNode) return;
-    console.debug("Metronome.scheduleClick", { time, accent, currentTime: this.audioCtx.currentTime });
+    console.debug("Metronome.scheduleClick", {
+      time,
+      accent,
+      currentTime: this.audioCtx.currentTime,
+    });
     const osc = this.audioCtx.createOscillator();
     const env = this.audioCtx.createGain();
     osc.type = "sine";
