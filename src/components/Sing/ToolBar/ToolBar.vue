@@ -119,6 +119,16 @@
         icon="loop"
         @click="toggleLoop"
       />
+      <QBtn
+        flat
+        round
+        size="sm"
+        class="sing-playback-button sing-playback-metronome"
+        :class="{ 'sing-playback-metronome-enabled': isMetronomeOn }"
+        icon="music_note"
+        @click="toggleMetronome"
+      />
+
       <PlayheadPositionDisplay class="sing-playhead-position" />
     </div>
     <!-- settings for edit controls -->
@@ -146,6 +156,12 @@
       </QBtn>
       <QIcon name="volume_up" size="xs" class="sing-volume-icon" />
       <QSlider v-model.number="volume" trackSize="2px" class="sing-volume" />
+      <QIcon name="music_note" size="xs" class="sing-volume-icon" />
+      <QSlider
+        v-model.number="metronomeVolume"
+        trackSize="2px"
+        class="sing-volume sing-metronome-volume"
+      />
       <QSelect
         v-model="snapTypeSelectModel"
         :options="snapTypeSelectOptions"
@@ -165,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import PlayheadPositionDisplay from "../PlayheadPositionDisplay.vue";
 import EditTargetSwicher from "./EditTargetSwicher.vue";
 import { useStore } from "@/store";
@@ -179,6 +195,10 @@ import {
   isValidBeats,
   isValidBeatType,
   isValidBpm,
+  tickToSecond,
+  getBeatDuration,
+  tickToMeasureNumber,
+  measureNumberToTick,
 } from "@/sing/music";
 import {
   getSnapTypes,
@@ -187,6 +207,7 @@ import {
 } from "@/sing/domain";
 import CharacterMenuButton from "@/components/Sing/CharacterMenuButton/MenuButton.vue";
 import { useHotkeyManager } from "@/plugins/hotkeyPlugin";
+import { globalMetronome } from "@/helpers/metronome";
 import type { SequencerEditTarget } from "@/store/type";
 import { UnreachableError } from "@/type/utility";
 
@@ -374,6 +395,91 @@ const currentBpm = computed(() => {
 });
 
 const nowPlaying = computed(() => store.state.nowPlaying);
+
+// ---- metronome (prototype) ----
+const isMetronomeOn = ref(false);
+// UIは 0..100 のレンジに合わせる（ボーカル音量と同様）
+const metronomeVolume = ref(50);
+
+watch(currentBpm, (bpm) => {
+  console.debug("ToolBar.watch: currentBpm", bpm);
+  globalMetronome.setBpm(Number(bpm));
+});
+
+watch(currentTimeSignature, (ts) => {
+  console.debug("ToolBar.watch: currentTimeSignature", ts);
+  globalMetronome.setBeatsPerMeasure(ts.beats);
+});
+
+watch(nowPlaying, (p) => {
+  console.debug(
+    "ToolBar.watch: nowPlaying",
+    p,
+    "isMetronomeOn",
+    isMetronomeOn.value,
+  );
+  if (isMetronomeOn.value && p) {
+    globalMetronome.start();
+  } else {
+    globalMetronome.stop();
+  }
+});
+
+watch(metronomeVolume, (v) => {
+  console.debug("ToolBar.watch: metronomeVolume", v);
+  // スライダーは 0..100 を返すため 0..1 にスケーリングして渡す
+  globalMetronome.setVolume(Number(v) / 100);
+});
+
+const toggleMetronome = () => {
+  isMetronomeOn.value = !isMetronomeOn.value;
+  console.debug("ToolBar.toggleMetronome", isMetronomeOn.value);
+  if (isMetronomeOn.value && nowPlaying.value) {
+    // 再生中にトグルした場合はプレイヘッド位置に同期して開始
+    const playheadTicksValue = playheadTicks.value;
+    // use PlayheadPositionDisplay のロジックを参照して、小節.拍の計算を行う
+    const tpqnVal = tpqn.value;
+    const tsPositions = getTimeSignaturePositions(
+      timeSignatures.value,
+      tpqnVal,
+    );
+    const timeSignaturesWithPos = timeSignatures.value.map((v, i) => ({
+      ...v,
+      position: tsPositions[i],
+    }));
+    const mb = ticksToMeasuresBeats(
+      playheadTicksValue,
+      timeSignaturesWithPos,
+      tpqnVal,
+    );
+    const beatInteger = Math.floor(mb.beats);
+    const beatFraction = mb.beats - beatInteger; // 0.. <1
+    const beatType = currentTimeSignature.value.beatType;
+    const ticksPerBeat = getBeatDuration(beatType, tpqnVal);
+    const ticksIntoBeat = Math.round(beatFraction * ticksPerBeat);
+    const initialBeatIndex =
+      (beatInteger - 1) % currentTimeSignature.value.beats; // convert 1-based to 0-based
+
+    const beatStartTick = playheadTicksValue - ticksIntoBeat;
+    const offsetIntoBeatSeconds =
+      tickToSecond(playheadTicksValue, tempos.value, tpqnVal) -
+      tickToSecond(beatStartTick, tempos.value, tpqnVal);
+    const secondsPerBeat =
+      tickToSecond(beatStartTick + ticksPerBeat, tempos.value, tpqnVal) -
+      tickToSecond(beatStartTick, tempos.value, tpqnVal);
+
+    globalMetronome.startAligned(
+      offsetIntoBeatSeconds,
+      secondsPerBeat,
+      initialBeatIndex,
+      currentTimeSignature.value.beats,
+    );
+  } else {
+    globalMetronome.stop();
+  }
+};
+
+// -------------------------------
 
 const play = () => {
   void store.actions.SING_PLAY_AUDIO();
@@ -732,6 +838,17 @@ const snapTypeSelectModel = computed({
   }
 }
 
+.sing-playback-metronome {
+  margin-left: 8px;
+  color: var(--scheme-color-on-surface-variant);
+  background: transparent;
+
+  &-enabled {
+    color: var(--scheme-color-primary);
+    background: var(--scheme-color-secondary-container);
+  }
+}
+
 .sing-playhead-position {
   margin-left: 16px;
 }
@@ -780,6 +897,10 @@ const snapTypeSelectModel = computed({
   :deep(.q-slider__thumb) {
     color: var(--scheme-color-primary-fixed-dim);
   }
+}
+
+.sing-metronome-volume {
+  width: 72px;
 }
 
 .sing-snap {
