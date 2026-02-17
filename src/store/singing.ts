@@ -2027,7 +2027,6 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         );
       } catch (e) {
         // best-effort: do not break playback if metronome alignment fails
-        console.debug("metronome alignment failed", e);
         try {
           globalMetronome.start();
         } catch {
@@ -2053,7 +2052,6 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
       try {
         globalMetronome.stop();
       } catch (e) {
-        console.debug("metronome stop failed", e);
       }
 
       transport.stop();

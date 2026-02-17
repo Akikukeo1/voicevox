@@ -51,7 +51,8 @@
         label="拍子"
         stackLabel
         outlined
-      >
+          import { useHotkeyManager } from "@/plugins/hotkeyPlugin";
+          import { useRootMiscSetting } from "@/composables/useRootMiscSetting";
         <template #control>
           <div class="sing-beats">
             <QSelect
@@ -239,6 +240,15 @@ registerHotkeyWithCleanup({
 
 registerHotkeyWithCleanup({
   editor,
+          const [rootMetronomeEnabled, setRootMetronomeEnabled] = useRootMiscSetting(
+            store,
+            "metronomeEnabled",
+          );
+          const [rootMetronomeVolume, setRootMetronomeVolume] = useRootMiscSetting(
+            store,
+            "metronomeVolume",
+          );
+
   name: "再生/停止",
   callback: () => {
     if (nowPlaying.value) {
@@ -272,7 +282,7 @@ const toggleSidebar = () => {
 const tempos = computed(() => store.state.tempos);
 const timeSignatures = computed(() => store.state.timeSignatures);
 const keyRangeAdjustment = computed(
-  () => store.getters.SELECTED_TRACK.keyRangeAdjustment,
+          watch(metronomeVolume, (v) => {
 );
 const volumeRangeAdjustment = computed(
   () => store.getters.SELECTED_TRACK.volumeRangeAdjustment,
@@ -401,22 +411,14 @@ const isMetronomeOn = ref(false);
 const metronomeVolume = ref(50);
 
 watch(currentBpm, (bpm) => {
-  console.debug("ToolBar.watch: currentBpm", bpm);
   globalMetronome.setBpm(Number(bpm));
 });
 
 watch(currentTimeSignature, (ts) => {
-  console.debug("ToolBar.watch: currentTimeSignature", ts);
   globalMetronome.setBeatsPerMeasure(ts.beats);
 });
 
 watch(nowPlaying, (p) => {
-  console.debug(
-    "ToolBar.watch: nowPlaying",
-    p,
-    "isMetronomeOn",
-    isMetronomeOn.value,
-  );
   if (isMetronomeOn.value && p) {
     globalMetronome.start();
   } else {
@@ -425,14 +427,12 @@ watch(nowPlaying, (p) => {
 });
 
 watch(metronomeVolume, (v) => {
-  console.debug("ToolBar.watch: metronomeVolume", v);
   // スライダーは 0..100 を返すため 0..1 にスケーリングして渡す
   globalMetronome.setVolume(Number(v) / 100);
 });
 
 const toggleMetronome = () => {
   isMetronomeOn.value = !isMetronomeOn.value;
-  console.debug("ToolBar.toggleMetronome", isMetronomeOn.value);
   if (isMetronomeOn.value && nowPlaying.value) {
     // 再生中にトグルした場合はプレイヘッド位置に同期して開始
     const playheadTicksValue = playheadTicks.value;

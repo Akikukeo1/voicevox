@@ -33,24 +33,20 @@ export class Metronome {
   }
 
   setBpm(bpm: number) {
-    console.debug("Metronome.setBpm", bpm);
     if (bpm <= 0) return;
     this.secondsPerBeat = 60 / bpm;
   }
 
   setBeatsPerMeasure(beats: number) {
-    console.debug("Metronome.setBeatsPerMeasure", beats);
     if (beats >= 1) this.beatsPerMeasure = Math.max(1, Math.floor(beats));
   }
 
   setVolume(v: number) {
-    console.debug("Metronome.setVolume", v);
     this.ensureAudio();
     if (this.gainNode) this.gainNode.gain.value = Math.max(0, Math.min(1, v));
   }
 
   start() {
-    console.debug("Metronome.start");
     this.ensureAudio();
     if (!this.audioCtx || !this.gainNode) return;
     if (this.audioCtx.state === "suspended") {
@@ -78,11 +74,7 @@ export class Metronome {
     initialBeatIndex: number,
     beatsPerMeasure?: number,
   ) {
-    console.debug("Metronome.startAligned", {
-      offsetIntoBeatSeconds,
-      secondsPerBeat,
-      initialBeatIndex,
-    });
+    // startAligned: align metronome phase with external playhead
     this.ensureAudio();
     if (!this.audioCtx || !this.gainNode) return;
     if (this.audioCtx.state === "suspended") {
@@ -114,7 +106,6 @@ export class Metronome {
   }
 
   stop() {
-    console.debug("Metronome.stop");
     if (!this.isRunning) return;
     this.isRunning = false;
     if (this.intervalId != null) {
@@ -125,19 +116,12 @@ export class Metronome {
 
   private scheduler() {
     if (!this.audioCtx) return;
-    // debug
-    // console.debug("Metronome.scheduler currentTime", this.audioCtx.currentTime, "nextNoteTime", this.nextNoteTime);
     while (
       this.nextNoteTime <
       this.audioCtx.currentTime + this.scheduleAheadTime
     ) {
       const isAccent = this.beatIndex % this.beatsPerMeasure === 0;
-      // debug
-      console.debug("Metronome.schedule", {
-        time: this.nextNoteTime,
-        accent: isAccent,
-        beatIndex: this.beatIndex,
-      });
+      // schedule next click
       this.scheduleClick(this.nextNoteTime, isAccent);
       this.nextNoteTime += this.secondsPerBeat;
       this.beatIndex = (this.beatIndex + 1) % this.beatsPerMeasure;
@@ -146,11 +130,7 @@ export class Metronome {
 
   private scheduleClick(time: number, accent: boolean) {
     if (!this.audioCtx || !this.gainNode) return;
-    console.debug("Metronome.scheduleClick", {
-      time,
-      accent,
-      currentTime: this.audioCtx.currentTime,
-    });
+    // scheduleClick: create oscillator and envelope for a short click
     const osc = this.audioCtx.createOscillator();
     const env = this.audioCtx.createGain();
     osc.type = "sine";
@@ -174,7 +154,6 @@ export class Metronome {
     this.ensureAudio();
     if (!this.audioCtx) return;
     const t = this.audioCtx.currentTime + 0.01;
-    console.debug("Metronome.clickOnce", { time: t });
     this.scheduleClick(t, true);
   }
 }
