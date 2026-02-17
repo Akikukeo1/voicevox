@@ -2030,7 +2030,7 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         try {
           globalMetronome.start();
         } catch {
-          /* swallow */
+          void 0;
         }
       }
 
@@ -2052,9 +2052,8 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
       try {
         globalMetronome.stop();
       } catch (e) {
+        void 0;
       }
-
-      transport.stop();
       animationTimer.stop();
       playheadPosition.value = getters.SECOND_TO_TICK(transport.time);
     },

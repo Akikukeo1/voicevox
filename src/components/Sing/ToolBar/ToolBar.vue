@@ -51,8 +51,7 @@
         label="拍子"
         stackLabel
         outlined
-          import { useHotkeyManager } from "@/plugins/hotkeyPlugin";
-          import { useRootMiscSetting } from "@/composables/useRootMiscSetting";
+      >
         <template #control>
           <div class="sing-beats">
             <QSelect
@@ -207,11 +206,21 @@ import {
 } from "@/sing/domain";
 import CharacterMenuButton from "@/components/Sing/CharacterMenuButton/MenuButton.vue";
 import { useHotkeyManager } from "@/plugins/hotkeyPlugin";
+import { useRootMiscSetting } from "@/composables/useRootMiscSetting";
 import { globalMetronome } from "@/helpers/metronome";
 import type { SequencerEditTarget } from "@/store/type";
 import { UnreachableError } from "@/type/utility";
 
 const store = useStore();
+
+const [rootMetronomeEnabled, setRootMetronomeEnabled] = useRootMiscSetting(
+  store,
+  "metronomeEnabled",
+);
+const [rootMetronomeVolume, setRootMetronomeVolume] = useRootMiscSetting(
+  store,
+  "metronomeVolume",
+);
 
 const uiLocked = computed(() => store.getters.UI_LOCKED);
 const editor = "song";
@@ -240,15 +249,6 @@ registerHotkeyWithCleanup({
 
 registerHotkeyWithCleanup({
   editor,
-          const [rootMetronomeEnabled, setRootMetronomeEnabled] = useRootMiscSetting(
-            store,
-            "metronomeEnabled",
-          );
-          const [rootMetronomeVolume, setRootMetronomeVolume] = useRootMiscSetting(
-            store,
-            "metronomeVolume",
-          );
-
   name: "再生/停止",
   callback: () => {
     if (nowPlaying.value) {
@@ -282,7 +282,7 @@ const toggleSidebar = () => {
 const tempos = computed(() => store.state.tempos);
 const timeSignatures = computed(() => store.state.timeSignatures);
 const keyRangeAdjustment = computed(
-          watch(metronomeVolume, (v) => {
+  () => store.getters.SELECTED_TRACK.keyRangeAdjustment,
 );
 const volumeRangeAdjustment = computed(
   () => store.getters.SELECTED_TRACK.volumeRangeAdjustment,

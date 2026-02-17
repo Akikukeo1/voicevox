@@ -207,6 +207,8 @@ exports[`0.13.0からマイグレーションできる 1`] = `
     },
   ],
   "inheritAudioInfo": true,
+  "metronomeEnabled": false,
+  "metronomeVolume": 50,
   "openedEditor": "talk",
   "playheadPositionDisplayFormat": "MINUTES_SECONDS",
   "presets": {
