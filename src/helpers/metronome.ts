@@ -16,8 +16,16 @@ export class Metronome {
 
   private ensureAudio() {
     if (!this.audioCtx) {
-      this.audioCtx = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+      type AudioCtor = { new (): AudioContext };
+      const globalObj = globalThis as unknown as {
+        AudioContext?: AudioCtor;
+        webkitAudioContext?: AudioCtor;
+      };
+      const Ctor = globalObj.AudioContext ?? globalObj.webkitAudioContext;
+      if (!Ctor) {
+        throw new Error("AudioContext is not available in this environment");
+      }
+      this.audioCtx = new Ctor();
       this.gainNode = this.audioCtx.createGain();
       this.gainNode.gain.value = 0.5;
       this.gainNode.connect(this.audioCtx.destination);

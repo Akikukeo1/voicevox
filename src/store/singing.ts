@@ -1989,12 +1989,10 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         const tpqn = state.tpqn;
         const timeSignatures = state.timeSignatures;
         const tsPositions = getTimeSignaturePositions(timeSignatures, tpqn);
-        const timeSignaturesWithPos = timeSignatures.map(
-          (v: any, i: number) => ({
-            ...v,
-            position: tsPositions[i],
-          }),
-        );
+        const timeSignaturesWithPos = timeSignatures.map((v, i) => ({
+          ...v,
+          position: tsPositions[i],
+        })) as ((typeof timeSignatures)[number] & { position: number })[];
         const mb = ticksToMeasuresBeats(
           currentTick,
           timeSignaturesWithPos,
@@ -2032,7 +2030,7 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         console.debug("metronome alignment failed", e);
         try {
           globalMetronome.start();
-        } catch (_err) {
+        } catch {
           /* swallow */
         }
       }
