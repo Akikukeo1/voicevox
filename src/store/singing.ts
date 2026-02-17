@@ -2027,11 +2027,10 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         );
       } catch (e) {
         // best-effort: do not break playback if metronome alignment fails
-        console.debug("metronome alignment failed", e);
         try {
           globalMetronome.start();
         } catch {
-          /* swallow */
+          void 0;
         }
       }
 
@@ -2053,10 +2052,8 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
       try {
         globalMetronome.stop();
       } catch (e) {
-        console.debug("metronome stop failed", e);
+        void 0;
       }
-
-      transport.stop();
       animationTimer.stop();
       playheadPosition.value = getters.SECOND_TO_TICK(transport.time);
     },

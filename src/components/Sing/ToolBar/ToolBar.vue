@@ -206,11 +206,21 @@ import {
 } from "@/sing/domain";
 import CharacterMenuButton from "@/components/Sing/CharacterMenuButton/MenuButton.vue";
 import { useHotkeyManager } from "@/plugins/hotkeyPlugin";
+import { useRootMiscSetting } from "@/composables/useRootMiscSetting";
 import { globalMetronome } from "@/helpers/metronome";
 import type { SequencerEditTarget } from "@/store/type";
 import { UnreachableError } from "@/type/utility";
 
 const store = useStore();
+
+const [rootMetronomeEnabled, setRootMetronomeEnabled] = useRootMiscSetting(
+  store,
+  "metronomeEnabled",
+);
+const [rootMetronomeVolume, setRootMetronomeVolume] = useRootMiscSetting(
+  store,
+  "metronomeVolume",
+);
 
 const uiLocked = computed(() => store.getters.UI_LOCKED);
 const editor = "song";
@@ -401,22 +411,14 @@ const isMetronomeOn = ref(false);
 const metronomeVolume = ref(50);
 
 watch(currentBpm, (bpm) => {
-  console.debug("ToolBar.watch: currentBpm", bpm);
   globalMetronome.setBpm(Number(bpm));
 });
 
 watch(currentTimeSignature, (ts) => {
-  console.debug("ToolBar.watch: currentTimeSignature", ts);
   globalMetronome.setBeatsPerMeasure(ts.beats);
 });
 
 watch(nowPlaying, (p) => {
-  console.debug(
-    "ToolBar.watch: nowPlaying",
-    p,
-    "isMetronomeOn",
-    isMetronomeOn.value,
-  );
   if (isMetronomeOn.value && p) {
     globalMetronome.start();
   } else {
@@ -425,14 +427,12 @@ watch(nowPlaying, (p) => {
 });
 
 watch(metronomeVolume, (v) => {
-  console.debug("ToolBar.watch: metronomeVolume", v);
   // スライダーは 0..100 を返すため 0..1 にスケーリングして渡す
   globalMetronome.setVolume(Number(v) / 100);
 });
 
 const toggleMetronome = () => {
   isMetronomeOn.value = !isMetronomeOn.value;
-  console.debug("ToolBar.toggleMetronome", isMetronomeOn.value);
   if (isMetronomeOn.value && nowPlaying.value) {
     // 再生中にトグルした場合はプレイヘッド位置に同期して開始
     const playheadTicksValue = playheadTicks.value;
