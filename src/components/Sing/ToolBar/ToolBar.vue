@@ -191,6 +191,7 @@ import {
   getMeasureDuration,
   getNoteDuration,
   getTimeSignaturePositions,
+  ticksToMeasuresBeats,
   isTriplet,
   isValidBeats,
   isValidBeatType,
