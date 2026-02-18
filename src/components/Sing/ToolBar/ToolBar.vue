@@ -445,8 +445,11 @@ const startMetronomeAligned = () => {
   const beatType = currentTimeSignature.value.beatType;
   const ticksPerBeat = getBeatDuration(beatType, tpqnVal);
   const ticksIntoBeat = Math.round(beatFraction * ticksPerBeat);
+  // Ensure initialBeatIndex is always non-negative (0-based index within measure)
   const initialBeatIndex =
-    (beatInteger - 1) % currentTimeSignature.value.beats;
+    ((beatInteger - 1) % currentTimeSignature.value.beats +
+      currentTimeSignature.value.beats) %
+    currentTimeSignature.value.beats;
 
   const beatStartTick = playheadTicksValue - ticksIntoBeat;
   const offsetIntoBeatSeconds =
