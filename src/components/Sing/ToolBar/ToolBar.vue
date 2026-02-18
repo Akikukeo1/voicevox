@@ -409,15 +409,11 @@ watch(currentTimeSignature, (ts) => {
 });
 
 watch(nowPlaying, (p) => {
-  if (!isMetronomeOn.value) {
-    globalMetronome.stop();
-    return;
-  }
-  
-  if (p) {
+  if (p && isMetronomeOn.value) {
     // 再生開始時はプレイヘッド位置に同期して開始
     startMetronomeAligned();
   } else {
+    // 再生停止時、またはメトロノームOFF時は停止
     globalMetronome.stop();
   }
 });
