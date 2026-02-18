@@ -66,11 +66,7 @@ import {
   isValidTpqn,
   secondToTick,
   tickToSecond,
-  getTimeSignaturePositions,
-  ticksToMeasuresBeats,
-  getBeatDuration,
 } from "@/sing/music";
-import { globalMetronome } from "@/helpers/metronome";
 import {
   isValidSnapType,
   isValidKeyRangeAdjustment,
@@ -142,55 +138,6 @@ import { noteSchema } from "@/domain/project/schema";
 import { toEditorTrack } from "@/infrastructures/projectFile/conversion";
 
 const logger = createLogger("store/singing");
-
-/**
- * Aligns and starts the metronome to the current playhead position.
- * @param currentTick - The current tick position
- * @param tpqn - Ticks per quarter note
- * @param timeSignatures - Array of time signatures
- * @param getTickToSecond - Function to convert tick to second
- */
-const alignAndStartMetronome = (
-  currentTick: number,
-  tpqn: number,
-  timeSignatures: TimeSignature[],
-  getTickToSecond: (tick: number) => number,
-): void => {
-  const tsPositions = getTimeSignaturePositions(timeSignatures, tpqn);
-  const timeSignaturesWithPos = timeSignatures.map((v, i) => ({
-    ...v,
-    position: tsPositions[i],
-  })) as (TimeSignature & { position: number })[];
-  const mb = ticksToMeasuresBeats(currentTick, timeSignaturesWithPos, tpqn);
-
-  // Find time signature in effect at currentTick
-  let tsIndex = 0;
-  for (let i = 0; i < timeSignaturesWithPos.length; i++) {
-    if (
-      i === timeSignaturesWithPos.length - 1 ||
-      timeSignaturesWithPos[i + 1].position > currentTick
-    ) {
-      tsIndex = i;
-      break;
-    }
-  }
-  const ts = timeSignaturesWithPos[tsIndex];
-  const beatDurationTicks = getBeatDuration(ts.beatType, tpqn);
-  const secondsPerBeat =
-    getTickToSecond(currentTick + beatDurationTicks) -
-    getTickToSecond(currentTick);
-  const offsetIntoBeatSeconds =
-    (mb.beats - Math.floor(mb.beats)) * secondsPerBeat;
-  const initialBeatIndex = Math.max(0, Math.floor(mb.beats) - 1);
-
-  globalMetronome.startAligned(
-    offsetIntoBeatSeconds,
-    secondsPerBeat,
-    initialBeatIndex,
-    ts.beats,
-  );
-};
-
 
 const generateAudioEvents = async (
   audioContext: BaseAudioContext,
@@ -1984,30 +1931,6 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
       }
       playheadPosition.value = position;
       transport.time = getters.TICK_TO_SECOND(position);
-      if (!state.nowPlaying) return;
-
-      try {
-        const currentTick = getters.SECOND_TO_TICK(transport.time);
-        const tpqn = state.tpqn;
-        if (tpqn == null) return;
-        const timeSignatures = state.timeSignatures;
-        if (!timeSignatures) return;
-        
-        alignAndStartMetronome(
-          currentTick,
-          tpqn,
-          timeSignatures,
-          getters.TICK_TO_SECOND,
-        );
-      } catch (e) {
-        // 位置合わせに失敗してもシークをブロックしないが、エラーは記録する
-        logger.warn("metronome alignment failed", e);
-        try {
-          globalMetronome.start();
-        } catch (err) {
-          logger.warn("metronome start failed", err);
-        }
-      }
     },
   },
 
@@ -2054,28 +1977,6 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
 
       transport.start();
 
-      try {
-        // Align metronome to current playhead position so clicks match UI display.
-        const currentTick = getters.SECOND_TO_TICK(transport.time);
-        const tpqn = state.tpqn;
-        const timeSignatures = state.timeSignatures;
-        
-        alignAndStartMetronome(
-          currentTick,
-          tpqn,
-          timeSignatures,
-          getters.TICK_TO_SECOND,
-        );
-      } catch (e) {
-        // best-effort: do not break playback if metronome alignment fails
-        logger.debug("metronome alignment failed", e);
-        try {
-          globalMetronome.start();
-        } catch {
-          /* swallow */
-        }
-      }
-
       animationTimer.start(() => {
         playheadPosition.value = getters.SECOND_TO_TICK(transport.time);
       });
@@ -2091,11 +1992,6 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         throw new Error("transport is undefined.");
       }
       mutations.SET_PLAYBACK_STATE({ nowPlaying: false });
-      try {
-        globalMetronome.stop();
-      } catch (e) {
-        logger.debug("metronome stop failed", e);
-      }
 
       transport.stop();
       animationTimer.stop();
