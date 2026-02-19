@@ -1,12 +1,18 @@
-// 小規模プロトタイプ用のメトロノーム実装
-// Web Audio API を使い、簡易的に強拍/弱拍の短いクリックを鳴らす。
+import { Timer } from "@/sing/utility";
+
+// Web Audio API を使用し、強拍/弱拍のクリックをスケジュールして再生します。
+// REVIEWFORUSER: 確認してほしい点 — `scheduleAheadTime` と `lookahead` のデフォルト値、
+// およびクリック音の周波数/エンベロープで問題がないかをレビューしてください。
+
 export class Metronome {
   private audioCtx: AudioContext | null = null;
   private gainNode: GainNode | null = null;
   private isRunning = false;
+  // lookahead はスケジューラーの実行間隔（ミリ秒）
   private lookahead = 25; // ms
+  // scheduleAheadTime は先読み時間（秒）
   private scheduleAheadTime = 0.1; // seconds
-  private intervalId: number | null = null;
+  private timer: Timer | null = null;
   private nextNoteTime = 0; // seconds (AudioContext.currentTime)
   private secondsPerBeat = 60 / 120; // default 120 BPM
   private beatIndex = 0;
@@ -56,10 +62,9 @@ export class Metronome {
     this.isRunning = true;
     this.nextNoteTime = this.audioCtx.currentTime;
     this.beatIndex = 0;
-    this.intervalId = window.setInterval(
-      () => this.scheduler(),
-      this.lookahead,
-    );
+    // Timer を使って Transport と同様の間隔でスケジューリングする
+    this.timer = new Timer(this.lookahead);
+    this.timer.start(() => this.scheduler());
   }
 
   /**
@@ -98,18 +103,16 @@ export class Metronome {
       this.beatIndex = (normalizedInitial + 1) % this.beatsPerMeasure;
     }
     this.isRunning = true;
-    this.intervalId = window.setInterval(
-      () => this.scheduler(),
-      this.lookahead,
-    );
+    this.timer = new Timer(this.lookahead);
+    this.timer.start(() => this.scheduler());
   }
 
   stop() {
     if (!this.isRunning) return;
     this.isRunning = false;
-    if (this.intervalId != null) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.timer) {
+      this.timer.stop();
+      this.timer = null;
     }
   }
 
@@ -130,6 +133,15 @@ export class Metronome {
 
   private scheduleClick(time: number, accent: boolean) {
     if (!this.audioCtx || !this.gainNode) return;
+    // WebAudio の最小スケジュール可能時刻を考慮して、あまりにも未来でない時刻は補正する（audioRendering の扱いに合わせる）
+    const renderQuantumSize = 128;
+    const earliestSchedulable =
+      this.audioCtx.currentTime +
+      (renderQuantumSize + 10) / this.audioCtx.sampleRate;
+    if (time < earliestSchedulable) {
+      time = earliestSchedulable;
+    }
+
     const osc = this.audioCtx.createOscillator();
     const env = this.audioCtx.createGain();
     osc.type = "sine";
