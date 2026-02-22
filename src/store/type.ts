@@ -747,8 +747,11 @@ export type AudioPlayerStoreTypes = {
   };
 };
 
-/*
+/**
  * Singing Store Types
+ * NOTE: 以下の型は歌唱機能（sing/singing）に関連する内部データ構造
+ * 型名は「Singing*」というプレフィックスで動作・振る舞いを表現
+ * 対応するUI/ファイルでは「song」（名詞）を使用
  */
 
 export type PhraseState =
