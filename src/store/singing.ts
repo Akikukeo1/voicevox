@@ -68,6 +68,12 @@ import {
   tickToSecond,
 } from "@/sing/music";
 import {
+  getTimeSignaturePositions,
+  ticksToMeasuresBeats,
+  getBeatDuration,
+} from "@/sing/music";
+import { globalMetronome } from "@/helpers/metronome";
+import {
   isValidSnapType,
   isValidKeyRangeAdjustment,
   isValidVolumeRangeAdjustment,
@@ -1925,12 +1931,66 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
   },
 
   SET_PLAYHEAD_POSITION: {
-    async action({ getters }, { position }: { position: number }) {
+    async action({ state, getters }, { position }: { position: number }) {
       if (!transport) {
         throw new Error("transport is undefined.");
       }
       playheadPosition.value = position;
       transport.time = getters.TICK_TO_SECOND(position);
+      if (!state.nowPlaying) return;
+
+      try {
+        const currentTick = getters.SECOND_TO_TICK(transport.time);
+        const tpqn = state.tpqn;
+        if (tpqn == null) return;
+        const timeSignatures = state.timeSignatures;
+        if (!timeSignatures) return;
+        const tsPositions = getTimeSignaturePositions(timeSignatures, tpqn);
+        const timeSignaturesWithPos = timeSignatures.map((v, i) => ({
+          ...v,
+          position: tsPositions[i],
+        })) as ((typeof timeSignatures)[number] & { position: number })[];
+        const mb = ticksToMeasuresBeats(
+          currentTick,
+          timeSignaturesWithPos,
+          tpqn,
+        );
+
+        // currentTick で有効な拍子記号を検索
+        let tsIndex = 0;
+        for (let i = 0; i < timeSignaturesWithPos.length; i++) {
+          if (
+            i === timeSignaturesWithPos.length - 1 ||
+            timeSignaturesWithPos[i + 1].position > currentTick
+          ) {
+            tsIndex = i;
+            break;
+          }
+        }
+        const ts = timeSignaturesWithPos[tsIndex];
+        const beatDurationTicks = getBeatDuration(ts.beatType, tpqn);
+        const secondsPerBeat =
+          getters.TICK_TO_SECOND(currentTick + beatDurationTicks) -
+          getters.TICK_TO_SECOND(currentTick);
+        const offsetIntoBeatSeconds =
+          (mb.beats - Math.floor(mb.beats)) * secondsPerBeat;
+        const initialBeatIndex = Math.max(0, Math.floor(mb.beats) - 1);
+
+        globalMetronome.startAligned(
+          offsetIntoBeatSeconds,
+          secondsPerBeat,
+          initialBeatIndex,
+          ts.beats,
+        );
+      } catch (e) {
+        // 位置合わせに失敗してもシークをブロックしないが、エラーは記録する
+        logger.warn("metronome alignment failed", e);
+        try {
+          globalMetronome.start();
+        } catch (err) {
+          logger.warn("metronome start failed", err);
+        }
+      }
     },
   },
 
@@ -1976,6 +2036,59 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
       );
 
       transport.start();
+
+      try {
+        // Align metronome to current playhead position so clicks match UI display.
+        const currentTick = getters.SECOND_TO_TICK(transport.time);
+        const tpqn = state.tpqn;
+        const timeSignatures = state.timeSignatures;
+        const tsPositions = getTimeSignaturePositions(timeSignatures, tpqn);
+        const timeSignaturesWithPos = timeSignatures.map((v, i) => ({
+          ...v,
+          position: tsPositions[i],
+        })) as ((typeof timeSignatures)[number] & { position: number })[];
+        const mb = ticksToMeasuresBeats(
+          currentTick,
+          timeSignaturesWithPos,
+          tpqn,
+        );
+
+        // Find time signature in effect at currentTick
+        let tsIndex = 0;
+        for (let i = 0; i < timeSignaturesWithPos.length; i++) {
+          if (
+            i === timeSignaturesWithPos.length - 1 ||
+            timeSignaturesWithPos[i + 1].position > currentTick
+          ) {
+            tsIndex = i;
+            break;
+          }
+        }
+        const ts = timeSignaturesWithPos[tsIndex];
+        const beatDurationTicks = getBeatDuration(ts.beatType, tpqn);
+        const secondsPerBeat =
+          getters.TICK_TO_SECOND(currentTick + beatDurationTicks) -
+          getters.TICK_TO_SECOND(currentTick);
+        const offsetIntoBeatSeconds =
+          (mb.beats - Math.floor(mb.beats)) * secondsPerBeat;
+        const initialBeatIndex = Math.max(0, Math.floor(mb.beats) - 1);
+
+        globalMetronome.startAligned(
+          offsetIntoBeatSeconds,
+          secondsPerBeat,
+          initialBeatIndex,
+          ts.beats,
+        );
+      } catch (e) {
+        // best-effort: do not break playback if metronome alignment fails
+        console.debug("metronome alignment failed", e);
+        try {
+          globalMetronome.start();
+        } catch {
+          /* swallow */
+        }
+      }
+
       animationTimer.start(() => {
         playheadPosition.value = getters.SECOND_TO_TICK(transport.time);
       });
@@ -1991,6 +2104,11 @@ export const singingStore = createPartialStore<SingingStoreTypes>({
         throw new Error("transport is undefined.");
       }
       mutations.SET_PLAYBACK_STATE({ nowPlaying: false });
+      try {
+        globalMetronome.stop();
+      } catch (e) {
+        console.debug("metronome stop failed", e);
+      }
 
       transport.stop();
       animationTimer.stop();

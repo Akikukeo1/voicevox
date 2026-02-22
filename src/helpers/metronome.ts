@@ -1,0 +1,173 @@
+import { Timer } from "@/sing/utility";
+
+// Web Audio API を使用し、強拍/弱拍のクリックをスケジュールして再生します。
+// REVIEWFORUSER: 確認してほしい点 — `scheduleAheadTime` と `lookahead` のデフォルト値、
+// およびクリック音の周波数/エンベロープで問題がないかをレビューしてください。
+
+export class Metronome {
+  private audioCtx: AudioContext | null = null;
+  private gainNode: GainNode | null = null;
+  private isRunning = false;
+  // lookahead はスケジューラーの実行間隔（ミリ秒）
+  private lookahead = 25; // ms
+  // scheduleAheadTime は先読み時間（秒）
+  private scheduleAheadTime = 0.1; // seconds
+  private timer: Timer | null = null;
+  private nextNoteTime = 0; // seconds (AudioContext.currentTime)
+  private secondsPerBeat = 60 / 120; // default 120 BPM
+  private beatIndex = 0;
+  private beatsPerMeasure = 4;
+
+  constructor() {}
+
+  private ensureAudio() {
+    if (!this.audioCtx) {
+      type AudioCtor = { new (): AudioContext };
+      const globalObj = globalThis as unknown as {
+        AudioContext?: AudioCtor;
+        webkitAudioContext?: AudioCtor;
+      };
+      const Ctor = globalObj.AudioContext ?? globalObj.webkitAudioContext;
+      if (!Ctor) {
+        throw new Error("AudioContext is not available in this environment");
+      }
+      this.audioCtx = new Ctor();
+      this.gainNode = this.audioCtx.createGain();
+      this.gainNode.gain.value = 0.5;
+      this.gainNode.connect(this.audioCtx.destination);
+    }
+  }
+
+  setBpm(bpm: number) {
+    if (bpm <= 0) return;
+    this.secondsPerBeat = 60 / bpm;
+  }
+
+  setBeatsPerMeasure(beats: number) {
+    if (beats >= 1) this.beatsPerMeasure = Math.max(1, Math.floor(beats));
+  }
+
+  setVolume(v: number) {
+    this.ensureAudio();
+    if (this.gainNode) this.gainNode.gain.value = Math.max(0, Math.min(1, v));
+  }
+
+  start() {
+    this.ensureAudio();
+    if (!this.audioCtx || !this.gainNode) return;
+    if (this.audioCtx.state === "suspended") {
+      void this.audioCtx.resume();
+    }
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.nextNoteTime = this.audioCtx.currentTime;
+    this.beatIndex = 0;
+    // Timer を使って Transport と同様の間隔でスケジューリングする
+    this.timer = new Timer(this.lookahead);
+    this.timer.start(() => this.scheduler());
+  }
+
+  /**
+   * 再生ヘッド位置に合わせて位相を揃えて開始する。
+   * @param offsetIntoBeatSeconds  現在の小節内での拍の経過秒数（ビート内の経過秒）
+   * @param secondsPerBeat ビート1つの長さ（秒）
+   * @param initialBeatIndex 現在のビートインデックス（小節内）
+   */
+  startAligned(
+    offsetIntoBeatSeconds: number,
+    secondsPerBeat: number,
+    initialBeatIndex: number,
+    beatsPerMeasure?: number,
+  ) {
+    this.ensureAudio();
+    if (!this.audioCtx || !this.gainNode) return;
+    if (this.audioCtx.state === "suspended") {
+      void this.audioCtx.resume();
+    }
+    if (this.isRunning) this.stop();
+    this.secondsPerBeat = secondsPerBeat;
+    if (beatsPerMeasure != null) this.beatsPerMeasure = beatsPerMeasure;
+    // 次のノート時刻を現在時刻から計算
+    const remainder = offsetIntoBeatSeconds % secondsPerBeat;
+    const timeToNextBeat = remainder === 0 ? 0 : secondsPerBeat - remainder;
+    this.nextNoteTime = this.audioCtx.currentTime + timeToNextBeat;
+    // Compute upcoming beat index within the measure.
+    const normalizedInitial =
+      ((Math.floor(initialBeatIndex) % this.beatsPerMeasure) +
+        this.beatsPerMeasure) %
+      this.beatsPerMeasure;
+    // If next note is immediate (on the beat), schedule that beat. Otherwise schedule the following beat.
+    if (timeToNextBeat === 0) {
+      this.beatIndex = normalizedInitial;
+    } else {
+      this.beatIndex = (normalizedInitial + 1) % this.beatsPerMeasure;
+    }
+    this.isRunning = true;
+    this.timer = new Timer(this.lookahead);
+    this.timer.start(() => this.scheduler());
+  }
+
+  stop() {
+    if (!this.isRunning) return;
+    this.isRunning = false;
+    if (this.timer) {
+      this.timer.stop();
+      this.timer = null;
+    }
+  }
+
+  private scheduler() {
+    if (!this.audioCtx) return;
+    // debug
+    // console.debug("Metronome.scheduler currentTime", this.audioCtx.currentTime, "nextNoteTime", this.nextNoteTime);
+    while (
+      this.nextNoteTime <
+      this.audioCtx.currentTime + this.scheduleAheadTime
+    ) {
+      const isAccent = this.beatIndex % this.beatsPerMeasure === 0;
+      this.scheduleClick(this.nextNoteTime, isAccent);
+      this.nextNoteTime += this.secondsPerBeat;
+      this.beatIndex = (this.beatIndex + 1) % this.beatsPerMeasure;
+    }
+  }
+
+  private scheduleClick(time: number, accent: boolean) {
+    if (!this.audioCtx || !this.gainNode) return;
+    // WebAudio の最小スケジュール可能時刻を考慮して、あまりにも未来でない時刻は補正する（audioRendering の扱いに合わせる）
+    const renderQuantumSize = 128;
+    const earliestSchedulable =
+      this.audioCtx.currentTime +
+      (renderQuantumSize + 10) / this.audioCtx.sampleRate;
+    if (time < earliestSchedulable) {
+      time = earliestSchedulable;
+    }
+
+    const osc = this.audioCtx.createOscillator();
+    const env = this.audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = accent ? 1200 : 800;
+    env.gain.value = 1;
+    osc.connect(env);
+    env.connect(this.gainNode);
+
+    const duration = 0.03; // 30ms
+    // Envelope
+    env.gain.setValueAtTime(0, time);
+    env.gain.linearRampToValueAtTime(1, time + 0.002);
+    env.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+    osc.start(time);
+    osc.stop(time + duration + 0.01);
+  }
+
+  // デバッグ用: 即時に単発クリックを鳴らす
+  clickOnce() {
+    this.ensureAudio();
+    if (!this.audioCtx) return;
+    const t = this.audioCtx.currentTime + 0.01;
+    this.scheduleClick(t, true);
+  }
+}
+
+// シングルトンとして簡易利用したい場合はこちらを使う
+export const globalMetronome = new Metronome();
