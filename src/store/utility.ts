@@ -409,6 +409,8 @@ export function buildAudioFileNameFromRawData(
   });
 }
 
+// NOTE: buildSongTrackAudioFileNameFromRawData は歌唱トラック（"song"）の音声ファイル名を生成
+// "song" は名詞的コンテキスト（ファイル・プロジェクトデータ）を表す
 export function buildSongTrackAudioFileNameFromRawData(
   fileNamePattern = DEFAULT_SONG_AUDIO_FILE_NAME_TEMPLATE,
   vars = DEFAULT_SONG_AUDIO_FILE_NAME_VARIABLES,
