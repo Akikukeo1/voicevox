@@ -89,6 +89,8 @@ const recordPatches =
   };
 
 export const commandStoreState: CommandStoreState = {
+  // NOTE: undoCommands/redoCommands のキーは EditorType に対応
+  // "song" はUI上の歌唱エディタを表す（EditorType の "song"）
   undoCommands: {
     talk: [],
     song: [],
