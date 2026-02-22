@@ -61,6 +61,8 @@ const applyTalkProjectToStore = async (
   }
 };
 
+// NOTE: songProject は歌唱プロジェクトデータをストアに適用する関数
+// "song" は名詞的コンテキスト（プロジェクト・データ構造）を表す
 const applySongProjectToStore = async (
   actions: DotNotationDispatch<AllActions>,
   songProject: LatestProjectType["song"],

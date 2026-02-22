@@ -151,6 +151,11 @@ export type AppInfos = {
   version: string;
 };
 
+/**
+ * エンジンのスタイル識別子
+ * NOTE: 歌唱機能に関連するスタイルは `"sing"` で統一（エンジン側の命名に準拠）
+ * 対応する UI エディタ表示は EditorType の `"song"` を使用
+ */
 export type StyleType = "talk" | "singing_teacher" | "frame_decode" | "sing";
 
 export type StyleInfo = {
@@ -396,6 +401,7 @@ export type ConfirmedTips = {
 
 // ルート直下にある雑多な設定値
 export const rootMiscSettingSchema = z.object({
+  // NOTE: openedEditor は EditorType に対応し、UI エディタ選択を保存（"song" は歌唱エディタ）
   openedEditor: z.enum(["talk", "song"]).default("talk"),
   editorFont: z.enum(["default", "os"]).default("default"),
   showTextLineNumber: z.boolean().default(false),
@@ -536,4 +542,9 @@ export interface MessageBoxReturnValue {
 
 export const SandboxKey = "backend";
 
+/**
+ * UI エディタの種別（名詞表現）
+ * NOTE: 歌唱エディタは `"song"` として統一（データ・UI 名詞）
+ * エンジンのスタイル識別子は StyleType の `"sing"` を参照
+ */
 export type EditorType = "talk" | "song";
