@@ -22,6 +22,7 @@ const createFakeStore = (state: State) => {
   let watchedCallback:
     | ((newValue: unknown, oldValue: unknown) => void)
     | undefined;
+  const unwatch = vi.fn();
 
   const fakeStore = {
     state,
@@ -35,11 +36,15 @@ const createFakeStore = (state: State) => {
       if (options?.immediate) {
         callback(_getter(fakeStore.state), undefined);
       }
-      return () => undefined;
+      return unwatch;
     },
   };
 
-  return { fakeStore, watchedCallback: () => watchedCallback };
+  return {
+    fakeStore,
+    watchedCallback: () => watchedCallback,
+    unwatch,
+  };
 };
 
 test("トラックを挿入する", () => {
