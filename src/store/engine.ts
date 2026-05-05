@@ -1,4 +1,4 @@
-import type { Store as VuexStore } from "vuex";
+import type { Store as VuexStore, Plugin } from "vuex";
 import type {
   EngineState,
   EngineStoreState,
