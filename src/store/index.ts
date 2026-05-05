@@ -27,6 +27,7 @@ import {
   singingStore,
   singingCommandStoreState,
   singingCommandStore,
+  singingStorePlugins,
 } from "./singing";
 import { projectStoreState, projectStore } from "./project";
 import { uiStoreState, uiStore } from "./ui";
@@ -412,6 +413,7 @@ export const store = createStore<State, AllGetters, AllActions, AllMutations>({
     ...singingStore.actions,
     ...singingCommandStore.actions,
   },
+  plugins: [...singingStorePlugins],
   strict: !isProduction,
 });
 

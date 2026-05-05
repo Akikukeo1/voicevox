@@ -604,6 +604,7 @@ onetimeWatch(
   },
 );
 
+// REVIEWFORUSER: 代替ポート通知の store.watch 化では、isVuexReady と confirmedTips の扱いを再確認したい。
 // 代替ポート情報の変更を監視
 watch(
   () => [store.state.altPortInfos, store.state.isVuexReady],

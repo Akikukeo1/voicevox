@@ -103,13 +103,6 @@ watchEffect(() => {
   setThemeToCss(theme);
 });
 
-// ソングの再生デバイスを同期
-watchEffect(() => {
-  void store.actions.APPLY_DEVICE_ID_TO_AUDIO_CONTEXT({
-    device: store.state.savingSetting.audioOutputDevice,
-  });
-});
-
 // デフォルト歌詞の設定が変わったら再レンダリング
 watch(
   () => store.state.defaultLyricMode,

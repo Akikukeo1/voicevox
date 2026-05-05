@@ -1,7 +1,9 @@
 import { ref } from "vue";
+import type { Plugin } from "vuex";
 import { createPartialStore } from "./vuex";
 import { createUILockAction } from "./ui";
 import {
+  type State,
   type SingingStoreState,
   type SingingStoreTypes,
   type SingingCommandStoreState,
@@ -308,6 +310,39 @@ const sequences = new Map<SequenceId, Sequence & { trackId: TrackId }>();
 const animationTimer = new AnimationTimer();
 
 const initialTrackId = TrackId(uuid4());
+
+const syncAudioOutputDevicePlugin: Plugin<State> = (store) => {
+  store.watch(
+    (state) => state.savingSetting.audioOutputDevice,
+    (device) => {
+      // NOTE: コンポーネントのライフサイクルに依存させず、store 側で再生デバイスを同期する。
+      if (!window.AudioContext) {
+        return;
+      }
+
+      void store.dispatch("APPLY_DEVICE_ID_TO_AUDIO_CONTEXT", { device });
+    },
+    { immediate: true },
+  );
+};
+
+const syncSongSidebarOpenPlugin: Plugin<State> = (store) => {
+  store.watch(
+    (state) => state.tracks.size,
+    (tracksSize, oldTracksSize) => {
+      if (oldTracksSize != undefined && oldTracksSize <= 1 && tracksSize > 1) {
+        void store.dispatch("SET_SONG_SIDEBAR_OPEN", {
+          isSongSidebarOpen: true,
+        });
+      }
+    },
+  );
+};
+
+export const singingStorePlugins: Plugin<State>[] = [
+  syncAudioOutputDevicePlugin,
+  syncSongSidebarOpenPlugin,
+];
 
 const setPhraseSingingVoices = (
   singingVoices: Map<SingingVoiceKey, SingingVoice>,
