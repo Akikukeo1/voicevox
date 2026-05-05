@@ -1,4 +1,10 @@
-import type { EngineState, EngineStoreState, EngineStoreTypes } from "./type";
+import type { Plugin } from "vuex";
+import type {
+  EngineState,
+  EngineStoreState,
+  EngineStoreTypes,
+  State,
+} from "./type";
 import { createUILockAction } from "./ui";
 import { createPartialStore } from "./vuex";
 import { createLogger } from "@/helpers/log";
@@ -11,6 +17,43 @@ export const engineStoreState: EngineStoreState = {
   altPortInfos: {},
 };
 const { info, error } = createLogger("store/engine");
+
+const showAltPortNotificationPlugin: Plugin<State> = (store) => {
+  store.watch(
+    (state) => [state.altPortInfos, state.isVuexReady],
+    () => {
+      // NOTE: Vueコンポーネントのライフサイクルではなく、store側で初回起動時の副作用を管理する。
+      if (!store.state.isVuexReady) {
+        return;
+      }
+
+      // 「今後この通知をしない」を尊重する。
+      if (store.state.confirmedTips.engineStartedOnAltPort) {
+        return;
+      }
+
+      for (const engineId of store.state.engineIds) {
+        const engineName = store.state.engineInfos[engineId].name;
+        const defaultPort = store.state.engineInfos[engineId].defaultPort;
+        const altPort = store.state.altPortInfos[engineId];
+        if (!altPort) {
+          return;
+        }
+
+        void store.dispatch("SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON", {
+          message: `${defaultPort}番ポートが使用中であるため ${engineName} は、${altPort}番ポートで起動しました`,
+          icon: "compare_arrows",
+          tipName: "engineStartedOnAltPort",
+        });
+      }
+    },
+    { immediate: true },
+  );
+};
+
+export const engineStorePlugins: Plugin<State>[] = [
+  showAltPortNotificationPlugin,
+];
 
 export const engineStore = createPartialStore<EngineStoreTypes>({
   /**
