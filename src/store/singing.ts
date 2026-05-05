@@ -333,7 +333,11 @@ const autoOpenSongSidebarPlugin: Plugin<State> = (store) => {
       // NOTE: サイドバーの自動オープンは、トラックの実体数ではなく trackOrder.length の変化を基準にする。
       //       これにより、トラックの追加・削除に対して、1トラックから2トラック以上になった瞬間だけを正確に拾える。
       //       watch の immediate がデフォルトで false なので、初回実行で副作用は発火しない。
-      if (previousTrackCount != undefined && previousTrackCount <= 1 && trackCount >= 2) {
+      if (
+        previousTrackCount != undefined &&
+        previousTrackCount <= 1 &&
+        trackCount >= 2
+      ) {
         void store.dispatch("SET_SONG_SIDEBAR_OPEN", {
           isSongSidebarOpen: true,
         });
