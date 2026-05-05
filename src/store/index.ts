@@ -36,7 +36,7 @@ import { presetStoreState, presetStore } from "./preset";
 import { dictionaryStoreState, dictionaryStore } from "./dictionary";
 import { proxyStore, proxyStoreState } from "./proxy";
 import { createPartialStore } from "./vuex";
-import { engineStoreState, engineStore, engineStorePlugins } from "./engine";
+import { engineStoreState, engineStore } from "./engine";
 import { filterCharacterInfosByStyleType } from "./utility";
 import {
   type DefaultStyleId,
@@ -413,7 +413,7 @@ export const store = createStore<State, AllGetters, AllActions, AllMutations>({
     ...singingStore.actions,
     ...singingCommandStore.actions,
   },
-  plugins: [...singingStorePlugins, ...engineStorePlugins],
+  plugins: [...singingStorePlugins],
   strict: !isProduction,
 });
 

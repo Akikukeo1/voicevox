@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { engineStorePlugins } from "@/store/engine";
+import { createAltPortNotificationWatcher } from "@/store/engine";
 import type { State } from "@/store/type";
 import type { EngineId } from "@/type/preload";
 
@@ -7,6 +7,7 @@ const createFakeStore = (state: State) => {
   let watchedCallback:
     | ((newValue: unknown, oldValue: unknown) => void)
     | undefined;
+  const unwatch = vi.fn();
 
   const fakeStore = {
     state,
@@ -14,17 +15,17 @@ const createFakeStore = (state: State) => {
     watch(
       _getter: (state: State) => unknown,
       callback: (newValue: unknown, oldValue: unknown) => void,
-      options?: { immediate?: boolean },
     ) {
       watchedCallback = callback;
-      if (options?.immediate) {
-        callback(_getter(fakeStore.state), undefined);
-      }
-      return () => undefined;
+      return unwatch;
     },
   };
 
-  return { fakeStore, watchedCallback: () => watchedCallback };
+  return {
+    fakeStore,
+    watchedCallback: () => watchedCallback,
+    unwatch,
+  };
 };
 
 test("代替ポートがないエンジンがあっても他のエンジンの通知を止めない", () => {
@@ -51,9 +52,13 @@ test("代替ポートがないエンジンがあっても他のエンジンの�
     },
   } as unknown as State;
 
-  const { fakeStore } = createFakeStore(state);
+  const { fakeStore, watchedCallback, unwatch } = createFakeStore(state);
 
-  engineStorePlugins[0](fakeStore as never);
+  const stopWatching = createAltPortNotificationWatcher(fakeStore as never);
+  expect(stopWatching).toBe(unwatch);
+  expect(fakeStore.dispatch).not.toHaveBeenCalled();
+
+  watchedCallback()?.(undefined, undefined);
 
   expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
   expect(fakeStore.dispatch).toHaveBeenCalledWith(

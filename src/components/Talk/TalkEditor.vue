@@ -129,6 +129,9 @@
 <script setup lang="ts">
 import {
   computed,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
   onBeforeUpdate,
   ref,
   toRaw,
@@ -143,6 +146,7 @@ import AudioInfo from "./AudioInfo.vue";
 import CharacterPortrait from "./CharacterPortrait.vue";
 import ToolBar from "./ToolBar.vue";
 import { useStore } from "@/store";
+import { createAltPortNotificationWatcher } from "@/store/engine";
 import ProgressView from "@/components/ProgressView.vue";
 import EngineStartupOverlay from "@/components/EngineStartupOverlay.vue";
 import type { AudioItem } from "@/store/type";
@@ -168,6 +172,24 @@ const props = defineProps<{
 }>();
 
 const store = useStore();
+
+let stopAltPortNotificationWatcher: (() => void) | undefined;
+const startAltPortNotificationWatcher = () => {
+  if (stopAltPortNotificationWatcher != undefined) {
+    return;
+  }
+
+  stopAltPortNotificationWatcher = createAltPortNotificationWatcher(store);
+};
+const stopAltPortNotificationWatcherIfNeeded = () => {
+  stopAltPortNotificationWatcher?.();
+  stopAltPortNotificationWatcher = undefined;
+};
+
+// NOTE: KeepAlive で非アクティブな間は代替ポート通知を止める。
+onActivated(startAltPortNotificationWatcher);
+onDeactivated(stopAltPortNotificationWatcherIfNeeded);
+onBeforeUnmount(stopAltPortNotificationWatcherIfNeeded);
 
 const audioKeys = computed(() => store.state.audioKeys);
 const selectedAudioKeys = computed(() => store.getters.SELECTED_AUDIO_KEYS);

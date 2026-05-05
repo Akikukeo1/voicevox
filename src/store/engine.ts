@@ -1,4 +1,4 @@
-import type { Plugin } from "vuex";
+import type { Store as VuexStore } from "vuex";
 import type {
   EngineState,
   EngineStoreState,
@@ -18,11 +18,13 @@ export const engineStoreState: EngineStoreState = {
 };
 const { info, error } = createLogger("store/engine");
 
-const showAltPortNotificationPlugin: Plugin<State> = (store) => {
-  store.watch(
+const registerAltPortNotificationWatcher = (
+  store: VuexStore<State>,
+): (() => void) => {
+  return store.watch(
     (state) => [state.altPortInfos, state.isVuexReady],
     () => {
-      // NOTE: Vueコンポーネントのライフサイクルではなく、store側で初回起動時の副作用を管理する。
+      // NOTE: TalkEditor が表示中の間だけ代替ポート通知を監視する。
       if (!store.state.isVuexReady) {
         return;
       }
@@ -47,13 +49,11 @@ const showAltPortNotificationPlugin: Plugin<State> = (store) => {
         });
       }
     },
-    { immediate: true },
   );
 };
 
-export const engineStorePlugins: Plugin<State>[] = [
-  showAltPortNotificationPlugin,
-];
+export const createAltPortNotificationWatcher =
+  registerAltPortNotificationWatcher;
 
 export const engineStore = createPartialStore<EngineStoreTypes>({
   /**
