@@ -19,6 +19,10 @@ afterEach(() => {
 });
 
 const createFakeStore = (state: State) => {
+  let watchedCallback:
+    | ((newValue: unknown, oldValue: unknown) => void)
+    | undefined;
+
   const fakeStore = {
     state,
     dispatch: vi.fn(),
@@ -27,6 +31,7 @@ const createFakeStore = (state: State) => {
       callback: (newValue: unknown, oldValue: unknown) => void,
       options?: { immediate?: boolean },
     ) {
+      watchedCallback = callback;
       if (options?.immediate) {
         callback(_getter(fakeStore.state), undefined);
       }
@@ -34,7 +39,7 @@ const createFakeStore = (state: State) => {
     },
   };
 
-  return { fakeStore };
+  return { fakeStore, watchedCallback: () => watchedCallback };
 };
 
 test("トラックを挿入する", () => {
@@ -172,4 +177,23 @@ test("再生デバイス同期プラグインは初回実行時に即時同期�
   } else {
     vi.stubGlobal("AudioContext", originalAudioContext);
   }
+});
+
+test("トラック数が1から2以上になったときだけサイドバーを開く", () => {
+  const state = cloneWithUnwrapProxy(store.state);
+  const { fakeStore, watchedCallback } = createFakeStore(state);
+
+  singingStorePlugins[1](fakeStore as never);
+
+  expect(fakeStore.dispatch).not.toHaveBeenCalled();
+
+  watchedCallback()?.(2, 1);
+  expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
+  expect(fakeStore.dispatch).toHaveBeenCalledWith(
+    "SET_SONG_SIDEBAR_OPEN",
+    true,
+  );
+
+  watchedCallback()?.(3, 2);
+  expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
 });
