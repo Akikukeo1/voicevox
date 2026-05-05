@@ -336,7 +336,8 @@ const autoOpenSongSidebarPlugin: Plugin<State> = (store) => {
       if (
         previousTrackCount != undefined &&
         previousTrackCount <= 1 &&
-        trackCount >= 2
+        trackCount >= 2 &&
+        store.state.openedEditor === "song"
       ) {
         void store.dispatch("SET_SONG_SIDEBAR_OPEN", {
           isSongSidebarOpen: true,

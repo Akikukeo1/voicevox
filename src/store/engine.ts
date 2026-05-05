@@ -30,6 +30,7 @@ type AltPortNotificationWatcherStore = {
   watch: (
     getter: (state: State, getters: unknown) => unknown,
     callback: (newValue: unknown, oldValue: unknown) => void,
+    options?: { deep?: boolean },
   ) => () => void;
   dispatch: (
     type: "SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON",
@@ -46,8 +47,15 @@ export const createAltPortNotificationWatcher = (
 ) => {
   const notifiedEngineIds = new Set<EngineId>();
 
+  // FIXME: engineInfos 全体の deep watch は性能への影響がある可能性があるため、
+  //        将来的に特定のプロパティのみを監視するなどの改善を検討する。
   return store.watch(
-    (state) => [state.altPortInfos, state.isVuexReady, state.engineIds],
+    (state) => [
+      state.altPortInfos,
+      state.isVuexReady,
+      state.engineIds,
+      state.engineInfos,
+    ],
     () => {
       if (!store.state.isVuexReady) {
         return;
@@ -86,6 +94,7 @@ export const createAltPortNotificationWatcher = (
         });
       }
     },
+    { deep: true },
   );
 };
 
