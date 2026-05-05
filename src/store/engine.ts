@@ -1,4 +1,4 @@
-import type { Store as VuexStore, Plugin } from "vuex";
+import type { Plugin } from "vuex";
 import type {
   EngineState,
   EngineStoreState,
@@ -18,20 +18,37 @@ export const engineStoreState: EngineStoreState = {
 };
 const { info, error } = createLogger("store/engine");
 
-type AltPortNotificationWatcherStore = Pick<
-  VuexStore<State>,
-  "state" | "dispatch" | "watch"
->;
+type AltPortNotificationWatcherStore = {
+  state: Pick<
+    State,
+    | "altPortInfos"
+    | "confirmedTips"
+    | "engineIds"
+    | "engineInfos"
+    | "isVuexReady"
+  >;
+  watch: (
+    getter: (state: State, getters: unknown) => unknown,
+    callback: (newValue: unknown, oldValue: unknown) => void,
+  ) => () => void;
+  dispatch: (
+    type: "SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON",
+    payload: {
+      message: string;
+      icon: string;
+      tipName: "engineStartedOnAltPort";
+    },
+  ) => unknown;
+};
 
-const registerAltPortNotificationWatcher = (
+export const createAltPortNotificationWatcher = (
   store: AltPortNotificationWatcherStore,
-): (() => void) => {
+) => {
   const notifiedEngineIds = new Set<EngineId>();
 
   return store.watch(
     (state) => [state.altPortInfos, state.isVuexReady, state.engineIds],
     () => {
-      // NOTE: TalkEditor が表示中の間だけ代替ポート通知を監視する。
       if (!store.state.isVuexReady) {
         return;
       }
@@ -72,8 +89,13 @@ const registerAltPortNotificationWatcher = (
   );
 };
 
-export const createAltPortNotificationWatcher =
-  registerAltPortNotificationWatcher;
+const showAltPortNotificationPlugin: Plugin<State> = (store) => {
+  createAltPortNotificationWatcher(store);
+};
+
+export const engineStorePlugins: Plugin<State>[] = [
+  showAltPortNotificationPlugin,
+];
 
 export const engineStore = createPartialStore<EngineStoreTypes>({
   /**

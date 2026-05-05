@@ -30,7 +30,6 @@ import {
   singingStorePlugins,
 } from "./singing";
 import { engineStorePlugins } from "./engine";
-} from "./singing";
 import { projectStoreState, projectStore } from "./project";
 import { uiStoreState, uiStore } from "./ui";
 import { settingStoreState, settingStore } from "./setting";
