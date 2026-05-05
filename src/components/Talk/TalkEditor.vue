@@ -187,6 +187,8 @@ const stopAltPortNotificationWatcherIfNeeded = () => {
 };
 
 // NOTE: KeepAlive で非アクティブな間は代替ポート通知を止める。
+// NOTE: TalkEditor は KeepAlive 内にあり、onActivated/onDeactivated は何度も呼ばれる。
+//       watcher の重複作成を防ぐため、stopAltPortNotificationWatcher を管理変数として保持している。
 onActivated(startAltPortNotificationWatcher);
 onDeactivated(stopAltPortNotificationWatcherIfNeeded);
 onBeforeUnmount(stopAltPortNotificationWatcherIfNeeded);
