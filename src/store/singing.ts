@@ -331,7 +331,9 @@ const autoOpenSongSidebarPlugin: Plugin<State> = (store) => {
     (state) => state.trackOrder.length,
     (trackCount, previousTrackCount) => {
       if (previousTrackCount === 1 && trackCount >= 2) {
-        void store.dispatch("SET_SONG_SIDEBAR_OPEN", true);
+        void store.dispatch("SET_SONG_SIDEBAR_OPEN", {
+          isSongSidebarOpen: true,
+        });
       }
     },
   );

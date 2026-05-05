@@ -18,8 +18,13 @@ export const engineStoreState: EngineStoreState = {
 };
 const { info, error } = createLogger("store/engine");
 
+type AltPortNotificationWatcherStore = Pick<
+  VuexStore<State>,
+  "state" | "dispatch" | "watch"
+>;
+
 const registerAltPortNotificationWatcher = (
-  store: VuexStore<State>,
+  store: AltPortNotificationWatcherStore,
 ): (() => void) => {
   return store.watch(
     (state) => [state.altPortInfos, state.isVuexReady],

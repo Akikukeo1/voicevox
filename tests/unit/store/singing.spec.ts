@@ -189,11 +189,18 @@ test("トラック数が1から2以上になったときだけサイドバーを
 
   watchedCallback()?.(2, 1);
   expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
-  expect(fakeStore.dispatch).toHaveBeenCalledWith(
-    "SET_SONG_SIDEBAR_OPEN",
-    true,
-  );
+  expect(fakeStore.dispatch).toHaveBeenCalledWith("SET_SONG_SIDEBAR_OPEN", {
+    isSongSidebarOpen: true,
+  });
 
   watchedCallback()?.(3, 2);
   expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
+});
+
+test("SET_SONG_SIDEBAR_OPEN はオブジェクト payload で状態を更新する", async () => {
+  store.mutations.SET_SONG_SIDEBAR_OPEN({ isSongSidebarOpen: false });
+
+  await store.actions.SET_SONG_SIDEBAR_OPEN({ isSongSidebarOpen: true });
+
+  expect(store.state.isSongSidebarOpen).toBe(true);
 });
