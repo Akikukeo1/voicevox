@@ -37,7 +37,7 @@ const showAltPortNotificationPlugin: Plugin<State> = (store) => {
         const defaultPort = store.state.engineInfos[engineId].defaultPort;
         const altPort = store.state.altPortInfos[engineId];
         if (!altPort) {
-          return;
+          continue;
         }
 
         void store.dispatch("SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON", {
