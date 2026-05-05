@@ -26,8 +26,10 @@ type AltPortNotificationWatcherStore = Pick<
 const registerAltPortNotificationWatcher = (
   store: AltPortNotificationWatcherStore,
 ): (() => void) => {
+  const notifiedEngineIds = new Set<EngineId>();
+
   return store.watch(
-    (state) => [state.altPortInfos, state.isVuexReady],
+    (state) => [state.altPortInfos, state.isVuexReady, state.engineIds],
     () => {
       // NOTE: TalkEditor が表示中の間だけ代替ポート通知を監視する。
       if (!store.state.isVuexReady) {
@@ -38,17 +40,30 @@ const registerAltPortNotificationWatcher = (
       if (store.state.confirmedTips.engineStartedOnAltPort) {
         return;
       }
-      // 代替ポートをトースト通知する
+
       for (const engineId of store.state.engineIds) {
-        const engineName = store.state.engineInfos[engineId].name;
-        const defaultPort = store.state.engineInfos[engineId].defaultPort;
         const altPort = store.state.altPortInfos[engineId];
         if (!altPort) {
+          // エンジンが代替ポートを使わなくなった場合は、通知済み状態を解除して再通知できるようにする。
+          notifiedEngineIds.delete(engineId);
           continue;
         }
 
+        // 既に通知済みのエンジンはスキップする。
+        if (notifiedEngineIds.has(engineId)) {
+          continue;
+        }
+
+        const engineInfo = store.state.engineInfos[engineId];
+        if (!engineInfo) {
+          // エンジン情報がまだ揃っていない場合は、次回の再評価で通知できるようにする。
+          notifiedEngineIds.delete(engineId);
+          continue;
+        }
+
+        notifiedEngineIds.add(engineId);
         void store.dispatch("SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON", {
-          message: `${defaultPort}番ポートが使用中であるため ${engineName} は、${altPort}番ポートで起動しました`,
+          message: `${engineInfo.defaultPort}番ポートが使用中であるため ${engineInfo.name} は、${altPort}番ポートで起動しました`,
           icon: "compare_arrows",
           tipName: "engineStartedOnAltPort",
         });
