@@ -29,7 +29,7 @@ const registerAltPortNotificationWatcher = (
         return;
       }
 
-      // 「今後この通知をしない」を尊重する。
+      // "今後この通知をしない" を考慮
       if (store.state.confirmedTips.engineStartedOnAltPort) {
         return;
       }
