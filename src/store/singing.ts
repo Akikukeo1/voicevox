@@ -326,8 +326,20 @@ const syncAudioOutputDevicePlugin: Plugin<State> = (store) => {
   );
 };
 
+const autoOpenSongSidebarPlugin: Plugin<State> = (store) => {
+  store.watch(
+    (state) => state.trackOrder.length,
+    (trackCount, previousTrackCount) => {
+      if (previousTrackCount === 1 && trackCount >= 2) {
+        void store.dispatch("SET_SONG_SIDEBAR_OPEN", true);
+      }
+    },
+  );
+};
+
 export const singingStorePlugins: Plugin<State>[] = [
   syncAudioOutputDevicePlugin,
+  autoOpenSongSidebarPlugin,
 ];
 
 const setPhraseSingingVoices = (
