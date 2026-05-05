@@ -33,7 +33,7 @@ const registerAltPortNotificationWatcher = (
       if (store.state.confirmedTips.engineStartedOnAltPort) {
         return;
       }
-
+      // 代替ポートをトースト通知する
       for (const engineId of store.state.engineIds) {
         const engineName = store.state.engineInfos[engineId].name;
         const defaultPort = store.state.engineInfos[engineId].defaultPort;
