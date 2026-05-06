@@ -1,5 +1,7 @@
-import { beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { store } from "@/store";
+import { singingStorePlugins } from "@/store/singing";
+import type { State } from "@/store/type";
 import { NoteId, TrackId } from "@/type/preload";
 import { resetMockMode, uuid4 } from "@/helpers/random";
 import { cloneWithUnwrapProxy } from "@/helpers/cloneWithUnwrapProxy";
@@ -11,6 +13,39 @@ beforeEach(() => {
 
   resetMockMode();
 });
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+const createFakeStore = (state: State) => {
+  let watchedCallback:
+    | ((newValue: unknown, oldValue: unknown) => void)
+    | undefined;
+  const unwatch = vi.fn();
+
+  const fakeStore = {
+    state,
+    dispatch: vi.fn(),
+    watch(
+      _getter: (state: State) => unknown,
+      callback: (newValue: unknown, oldValue: unknown) => void,
+      options?: { immediate?: boolean },
+    ) {
+      watchedCallback = callback;
+      if (options?.immediate) {
+        callback(_getter(fakeStore.state), undefined);
+      }
+      return unwatch;
+    },
+  };
+
+  return {
+    fakeStore,
+    watchedCallback: () => watchedCallback,
+    unwatch,
+  };
+};
 
 test("トラックを挿入する", () => {
   const dummyTrack = createDefaultTrack();
@@ -125,4 +160,81 @@ test("SYNC_TRACKS_AND_TRACK_CHANNEL_STRIPS is no-op when AudioContext is undefin
   await expect(
     store.actions.SYNC_TRACKS_AND_TRACK_CHANNEL_STRIPS(),
   ).resolves.toBeUndefined();
+});
+
+test("再生デバイス同期プラグインは初回実行時に即時同期する", () => {
+  const originalAudioContext = window.AudioContext;
+  vi.stubGlobal("AudioContext", class {});
+
+  const state = cloneWithUnwrapProxy(store.state);
+  state.savingSetting.audioOutputDevice = "test-device";
+  const { fakeStore } = createFakeStore(state);
+
+  singingStorePlugins[0](fakeStore as never);
+
+  expect(fakeStore.dispatch).toHaveBeenCalledWith(
+    "APPLY_DEVICE_ID_TO_AUDIO_CONTEXT",
+    { device: "test-device" },
+  );
+
+  if (originalAudioContext == undefined) {
+    vi.unstubAllGlobals();
+  } else {
+    vi.stubGlobal("AudioContext", originalAudioContext);
+  }
+});
+
+test("トラック数が1から2以上になったときだけサイドバーを開く", () => {
+  const state = cloneWithUnwrapProxy(store.state);
+  state.isVuexReady = true;
+  state.openedEditor = "song";
+  const { fakeStore, watchedCallback } = createFakeStore(state);
+
+  singingStorePlugins[1](fakeStore as never);
+
+  expect(fakeStore.dispatch).not.toHaveBeenCalled();
+
+  watchedCallback()?.(2, 1);
+  expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
+  expect(fakeStore.dispatch).toHaveBeenCalledWith("SET_SONG_SIDEBAR_OPEN", {
+    isSongSidebarOpen: true,
+  });
+
+  watchedCallback()?.(3, 2);
+  expect(fakeStore.dispatch).toHaveBeenCalledTimes(1);
+});
+
+test("SET_SONG_SIDEBAR_OPEN はオブジェクト payload で状態を更新する", async () => {
+  store.mutations.SET_SONG_SIDEBAR_OPEN({ isSongSidebarOpen: false });
+
+  await store.actions.SET_SONG_SIDEBAR_OPEN({ isSongSidebarOpen: true });
+
+  expect(store.state.isSongSidebarOpen).toBe(true);
+});
+
+test("trackOrder.length と tracks.size は常に同期している", () => {
+  // NOTE: autoOpenSongSidebarPlugin は trackOrder.length を監視しており、tracks.size ではなく trackOrder.length が正確である前提で動作している。
+  // このテストでは、トラックの追加・削除時に両者が常に同期していることを確認する。
+  const dummyTrack = createDefaultTrack();
+
+  // 初期状態で同期
+  expect(store.state.trackOrder.length).toBe(store.state.tracks.size);
+
+  // トラック追加後も同期
+  const trackId1 = TrackId(uuid4());
+  store.mutations.INSERT_TRACK({
+    trackId: trackId1,
+    track: dummyTrack,
+    prevTrackId: undefined,
+  });
+  expect(store.state.trackOrder.length).toBe(store.state.tracks.size);
+
+  // 複数追加後も同期
+  const trackId2 = TrackId(uuid4());
+  store.mutations.INSERT_TRACK({
+    trackId: trackId2,
+    track: dummyTrack,
+    prevTrackId: trackId1,
+  });
+  expect(store.state.trackOrder.length).toBe(store.state.tracks.size);
 });

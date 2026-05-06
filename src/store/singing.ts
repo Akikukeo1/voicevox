@@ -1,7 +1,9 @@
 import { ref } from "vue";
+import type { Plugin } from "vuex";
 import { createPartialStore } from "./vuex";
 import { createUILockAction } from "./ui";
 import {
+  type State,
   type SingingStoreState,
   type SingingStoreTypes,
   type SingingCommandStoreState,
@@ -308,6 +310,49 @@ const sequences = new Map<SequenceId, Sequence & { trackId: TrackId }>();
 const animationTimer = new AnimationTimer();
 
 const initialTrackId = TrackId(uuid4());
+
+const syncAudioOutputDevicePlugin: Plugin<State> = (store) => {
+  store.watch(
+    (state) => state.savingSetting.audioOutputDevice,
+    (device) => {
+      // NOTE: コンポーネントのライフサイクルに依存させず、store 側で再生デバイスを同期する。
+      if (!window.AudioContext) {
+        return;
+      }
+
+      void store.dispatch("APPLY_DEVICE_ID_TO_AUDIO_CONTEXT", { device });
+    },
+    { immediate: true },
+  );
+};
+
+const autoOpenSongSidebarPlugin: Plugin<State> = (store) => {
+  store.watch(
+    (state) => state.trackOrder.length,
+    (trackCount, previousTrackCount) => {
+      if (store.state.openedEditor !== "song") {
+        return;
+      }
+      // NOTE: サイドバーの自動オープンは、トラックの実体数ではなく trackOrder.length の変化を基準にする。
+      //       これにより、トラックの追加・削除に対して、1トラックから2トラック以上になった瞬間だけを正確に拾える。
+      //       watch の immediate がデフォルトで false なので、初回実行で副作用は発火しない。
+      if (
+        previousTrackCount != undefined &&
+        previousTrackCount <= 1 &&
+        trackCount >= 2
+      ) {
+        void store.dispatch("SET_SONG_SIDEBAR_OPEN", {
+          isSongSidebarOpen: true,
+        });
+      }
+    },
+  );
+};
+
+export const singingStorePlugins: Plugin<State>[] = [
+  syncAudioOutputDevicePlugin,
+  autoOpenSongSidebarPlugin,
+];
 
 const setPhraseSingingVoices = (
   singingVoices: Map<SingingVoiceKey, SingingVoice>,

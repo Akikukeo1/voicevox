@@ -604,32 +604,6 @@ onetimeWatch(
   },
 );
 
-// 代替ポート情報の変更を監視
-watch(
-  () => [store.state.altPortInfos, store.state.isVuexReady],
-  async () => {
-    // この watch がエンジンが起動した時 (=> 設定ファイルを読み込む前) に発火して, "今後この通知をしない" を無視するのを防ぐ
-    if (!store.state.isVuexReady) return;
-
-    // "今後この通知をしない" を考慮
-    if (store.state.confirmedTips.engineStartedOnAltPort) return;
-
-    // 代替ポートをトースト通知する
-    for (const engineId of store.state.engineIds) {
-      const engineName = store.state.engineInfos[engineId].name;
-      const defaultPort = store.state.engineInfos[engineId].defaultPort;
-      const altPort = store.state.altPortInfos[engineId];
-      if (!altPort) return;
-
-      void store.actions.SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON({
-        message: `${defaultPort}番ポートが使用中であるため ${engineName} は、${altPort}番ポートで起動しました`,
-        icon: "compare_arrows",
-        tipName: "engineStartedOnAltPort",
-      });
-    }
-  },
-);
-
 // ファイルのドロップ
 const fileDropEventCounter = ref(0);
 const loadDroppedFile = async (event: {

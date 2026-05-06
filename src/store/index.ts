@@ -27,7 +27,9 @@ import {
   singingStore,
   singingCommandStoreState,
   singingCommandStore,
+  singingStorePlugins,
 } from "./singing";
+import { engineStorePlugins } from "./engine";
 import { projectStoreState, projectStore } from "./project";
 import { uiStoreState, uiStore } from "./ui";
 import { settingStoreState, settingStore } from "./setting";
@@ -412,6 +414,7 @@ export const store = createStore<State, AllGetters, AllActions, AllMutations>({
     ...singingStore.actions,
     ...singingCommandStore.actions,
   },
+  plugins: [...singingStorePlugins, ...engineStorePlugins],
   strict: !isProduction,
 });
 

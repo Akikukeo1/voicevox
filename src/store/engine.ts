@@ -1,4 +1,10 @@
-import type { EngineState, EngineStoreState, EngineStoreTypes } from "./type";
+import type { Plugin } from "vuex";
+import type {
+  EngineState,
+  EngineStoreState,
+  EngineStoreTypes,
+  State,
+} from "./type";
 import { createUILockAction } from "./ui";
 import { createPartialStore } from "./vuex";
 import { createLogger } from "@/helpers/log";
@@ -11,6 +17,100 @@ export const engineStoreState: EngineStoreState = {
   altPortInfos: {},
 };
 const { info, error } = createLogger("store/engine");
+
+type AltPortNotificationWatcherStore = {
+  state: Pick<
+    State,
+    | "altPortInfos"
+    | "confirmedTips"
+    | "engineIds"
+    | "engineInfos"
+    | "isVuexReady"
+    | "openedEditor"
+  >;
+  watch: (
+    getter: (state: State, getters: unknown) => unknown,
+    callback: (newValue: unknown, oldValue: unknown) => void,
+    options?: { deep?: boolean },
+  ) => () => void;
+  dispatch: (
+    type: "SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON",
+    payload: {
+      message: string;
+      icon: string;
+      tipName: "engineStartedOnAltPort";
+    },
+  ) => unknown;
+};
+
+export const createAltPortNotificationWatcher = (
+  store: AltPortNotificationWatcherStore,
+) => {
+  const notifiedKeys = new Set<string>(); // engineId:altPort の形式で保持
+
+  // FIXME: engineInfos 全体の deep watch は性能への影響がある可能性があるため、
+  //        将来的に特定のプロパティのみを監視するなどの改善を検討する。
+  return store.watch(
+    (state) => [
+      state.altPortInfos,
+      state.isVuexReady,
+      state.engineIds,
+      state.engineInfos,
+    ],
+    () => {
+      if (!store.state.isVuexReady || store.state.openedEditor !== "talk") {
+        return;
+      }
+
+      // "今後この通知をしない" を考慮
+      if (store.state.confirmedTips.engineStartedOnAltPort) {
+        return;
+      }
+
+      for (const engineId of store.state.engineIds) {
+        const altPort = store.state.altPortInfos[engineId];
+        if (!altPort) {
+          // エンジンが代替ポートを使わなくなった場合は、そのエンジンの通知済み状態をすべて解除して再通知できるようにする。
+          // FIXME: ポートが変わった場合だけでなく、一度正常に戻ってから再度代替ポートになった場合も通知したい。
+          for (const key of notifiedKeys) {
+            if (key.startsWith(`${engineId}:`)) {
+              notifiedKeys.delete(key);
+            }
+          }
+          continue;
+        }
+
+        // 既に通知済みの同じポートのエンジンはスキップする。
+        const notifiedKey = `${engineId}:${altPort}`;
+        if (notifiedKeys.has(notifiedKey)) {
+          continue;
+        }
+
+        const engineInfo = store.state.engineInfos[engineId];
+        if (!engineInfo) {
+          // エンジン情報がまだ揃っていない場合は、次回の再評価で通知できるようにする。
+          continue;
+        }
+
+        notifiedKeys.add(notifiedKey);
+        void store.dispatch("SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON", {
+          message: `${engineInfo.defaultPort}番ポートが使用中であるため ${engineInfo.name} は、${altPort}番ポートで起動しました`,
+          icon: "compare_arrows",
+          tipName: "engineStartedOnAltPort",
+        });
+      }
+    },
+    { deep: true },
+  );
+};
+
+const showAltPortNotificationPlugin: Plugin<State> = (store) => {
+  createAltPortNotificationWatcher(store);
+};
+
+export const engineStorePlugins: Plugin<State>[] = [
+  showAltPortNotificationPlugin,
+];
 
 export const engineStore = createPartialStore<EngineStoreTypes>({
   /**
