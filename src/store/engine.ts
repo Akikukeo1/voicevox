@@ -26,6 +26,7 @@ type AltPortNotificationWatcherStore = {
     | "engineIds"
     | "engineInfos"
     | "isVuexReady"
+    | "openedEditor"
   >;
   watch: (
     getter: (state: State, getters: unknown) => unknown,
@@ -45,7 +46,7 @@ type AltPortNotificationWatcherStore = {
 export const createAltPortNotificationWatcher = (
   store: AltPortNotificationWatcherStore,
 ) => {
-  const notifiedEngineIds = new Set<EngineId>();
+  const notifiedKeys = new Set<string>(); // engineId:altPort の形式で保持
 
   // FIXME: engineInfos 全体の deep watch は性能への影響がある可能性があるため、
   //        将来的に特定のプロパティのみを監視するなどの改善を検討する。
@@ -57,7 +58,7 @@ export const createAltPortNotificationWatcher = (
       state.engineInfos,
     ],
     () => {
-      if (!store.state.isVuexReady) {
+      if (!store.state.isVuexReady || store.state.openedEditor !== "talk") {
         return;
       }
 
@@ -69,24 +70,29 @@ export const createAltPortNotificationWatcher = (
       for (const engineId of store.state.engineIds) {
         const altPort = store.state.altPortInfos[engineId];
         if (!altPort) {
-          // エンジンが代替ポートを使わなくなった場合は、通知済み状態を解除して再通知できるようにする。
-          notifiedEngineIds.delete(engineId);
+          // エンジンが代替ポートを使わなくなった場合は、そのエンジンの通知済み状態をすべて解除して再通知できるようにする。
+          // FIXME: ポートが変わった場合だけでなく、一度正常に戻ってから再度代替ポートになった場合も通知したい。
+          for (const key of notifiedKeys) {
+            if (key.startsWith(`${engineId}:`)) {
+              notifiedKeys.delete(key);
+            }
+          }
           continue;
         }
 
-        // 既に通知済みのエンジンはスキップする。
-        if (notifiedEngineIds.has(engineId)) {
+        // 既に通知済みの同じポートのエンジンはスキップする。
+        const notifiedKey = `${engineId}:${altPort}`;
+        if (notifiedKeys.has(notifiedKey)) {
           continue;
         }
 
         const engineInfo = store.state.engineInfos[engineId];
         if (!engineInfo) {
           // エンジン情報がまだ揃っていない場合は、次回の再評価で通知できるようにする。
-          notifiedEngineIds.delete(engineId);
           continue;
         }
 
-        notifiedEngineIds.add(engineId);
+        notifiedKeys.add(notifiedKey);
         void store.dispatch("SHOW_NOTIFY_AND_NOT_SHOW_AGAIN_BUTTON", {
           message: `${engineInfo.defaultPort}番ポートが使用中であるため ${engineInfo.name} は、${altPort}番ポートで起動しました`,
           icon: "compare_arrows",
