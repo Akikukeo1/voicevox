@@ -54,6 +54,7 @@
             @mouseover="reassignOtherMenuOpen"
         /></Teleport>
       </div>
+      <div class="window-title-drag-area"></div>
       <div
         class="window-title"
         :class="{ 'text-warning': isMultiEngineOffMode }"
@@ -272,11 +273,23 @@ watch(
 @use "@/styles/colors" as colors;
 
 .q-bar {
+  position: relative;
   min-height: vars.$menubar-height;
-  -webkit-app-region: drag; // Electronのドラッグ領域
+  -webkit-app-region: drag;
+
   :deep(.q-btn) {
-    -webkit-app-region: no-drag; // Electronのドラッグ領域対象から外す
+    -webkit-app-region: no-drag;
   }
+}
+
+.window-title-drag-area {
+  position: absolute;
+  left: 45%;
+  right: 45%;
+  top: 0;
+  bottom: 0;
+
+  -webkit-app-region: drag;
 }
 
 .window-logo {
@@ -289,13 +302,20 @@ watch(
 }
 
 .window-title {
-  flex: 1 max-content;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+
+  width: 50%;
   height: vars.$menubar-height;
+
   overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  -webkit-app-region: drag;
+
+  pointer-events: none;
 }
 
 .mac-traffic-light-space {
