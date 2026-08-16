@@ -54,15 +54,18 @@
             @mouseover="reassignOtherMenuOpen"
         /></Teleport>
       </div>
-      <div class="window-title-drag-area"></div>
       <div
         class="window-title"
         :class="{ 'text-warning': isMultiEngineOffMode }"
+        :style="{
+          paddingLeft: `${titlePaddingLeft}px`,
+          paddingRight: `${titlePaddingRight}px`,
+        }"
       >
         {{ titleText }}
       </div>
     </div>
-    <div class="no-margin row items-center no-wrap">
+    <div ref="right-controls" class="no-margin row items-center no-wrap">
       <TitleBarEditorSwitcher />
       <TitleBarButtons />
     </div>
@@ -70,7 +73,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, watch } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  useTemplateRef,
+  watch,
+} from "vue";
 import { type IntersectionValue, useQuasar } from "quasar";
 import type { MenuItemButton, MenuItemData, MenuItemRoot } from "../type";
 import MenuButton from "../MenuButton.vue";
@@ -220,6 +230,76 @@ const otherMenuTo = computed(() => {
   return `.other-menu-target-${i}`;
 });
 const buttonContainer = useTemplateRef("button-container");
+const rightControls = useTemplateRef("right-controls");
+const titlePaddingLeft = ref(0);
+const titlePaddingRight = ref(0);
+
+const updateTitleOffset = () => {
+  const bar = buttonContainer.value?.closest(".q-bar");
+  const left = buttonContainer.value;
+  const right = rightControls.value;
+
+  if (!(bar instanceof HTMLElement)) return;
+  if (!(left instanceof HTMLElement)) return;
+  if (!(right instanceof HTMLElement)) return;
+
+  const barRect = bar.getBoundingClientRect();
+  const leftRect = left.getBoundingClientRect();
+  const rightRect = right.getBoundingClientRect();
+
+  const leftSpace = leftRect.right - barRect.left;
+  const rightSpace = barRect.right - rightRect.left;
+
+  let padLeft = 0;
+  let padRight = 0;
+
+  if (leftSpace < rightSpace) {
+    padLeft = rightSpace - leftSpace;
+  } else {
+    padRight = leftSpace - rightSpace;
+  }
+
+  const totalAvailableWidth = rightRect.left - leftRect.right;
+  // 最低でもタイトルの幅を 80px は確保したい。それ未満になりそうなら padding を減らす
+  const minTitleWidth = 80;
+  const maxPadding = Math.max(0, totalAvailableWidth - minTitleWidth);
+
+  if (padLeft + padRight > maxPadding) {
+    const scale =
+      padLeft + padRight > 0 ? maxPadding / (padLeft + padRight) : 0;
+    padLeft *= scale;
+    padRight *= scale;
+  }
+
+  titlePaddingLeft.value = padLeft;
+  titlePaddingRight.value = padRight;
+};
+
+let resizeObserver: ResizeObserver | undefined;
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(updateTitleOffset);
+
+  if (buttonContainer.value) {
+    resizeObserver.observe(buttonContainer.value);
+  }
+
+  if (rightControls.value) {
+    resizeObserver.observe(rightControls.value);
+  }
+
+  const bar = buttonContainer.value?.closest(".q-bar");
+  if (bar instanceof HTMLElement) {
+    resizeObserver.observe(bar);
+  }
+
+  updateTitleOffset();
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+});
+
 const intersection: IntersectionValue = {
   handler(entry) {
     const element = entry?.target;
@@ -273,23 +353,12 @@ watch(
 @use "@/styles/colors" as colors;
 
 .q-bar {
-  position: relative;
   min-height: vars.$menubar-height;
   -webkit-app-region: drag;
 
   :deep(.q-btn) {
     -webkit-app-region: no-drag;
   }
-}
-
-.window-title-drag-area {
-  position: absolute;
-  left: 45%;
-  right: 45%;
-  top: 0;
-  bottom: 0;
-
-  -webkit-app-region: drag;
 }
 
 .window-logo {
@@ -302,12 +371,9 @@ watch(
 }
 
 .window-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
+  flex: 1;
+  min-width: 0;
 
-  width: 50%;
   height: vars.$menubar-height;
 
   overflow: hidden;
@@ -315,7 +381,10 @@ watch(
   text-overflow: ellipsis;
   white-space: nowrap;
 
+  -webkit-app-region: drag;
   pointer-events: none;
+
+  box-sizing: border-box;
 }
 
 .mac-traffic-light-space {
