@@ -1,6 +1,7 @@
 import { test, expect, type Locator } from "@playwright/test";
 
 import { gotoHome, navigateToMain } from "../navigators";
+import { getQuasarMenu } from "../locators";
 import { fillAudioCell, validateInput } from "./utils";
 
 test.beforeEach(gotoHome);
@@ -58,6 +59,55 @@ test("テキストの追加・入れ替え・削除", async ({ page }) => {
   await validateInput(page.locator(".audio-cell input").first(), "baz");
   await page.waitForTimeout(100);
   await validateInput(page.locator(".audio-cell input").nth(1), "bar");
+});
+
+test("UIロック中はテキスト欄を並び替えられない", async ({ page }) => {
+  await navigateToMain(page);
+
+  await page.getByRole("button").filter({ hasText: "add" }).click();
+  await page.waitForTimeout(100);
+  await fillAudioCell(page, 0, "foo");
+  await fillAudioCell(page, 1, "bar");
+
+  await page.evaluate(() => {
+    type _Window = Window & {
+      _resolveShowSaveDirectoryDialog: () => void;
+    };
+
+    const _window = window as unknown as _Window;
+    const { promise, resolve } = Promise.withResolvers<string | undefined>();
+    _window._resolveShowSaveDirectoryDialog = () => resolve(undefined);
+    _window.backend.showSaveDirectoryDialog = () => promise;
+  });
+
+  await page.getByRole("button", { name: "ファイル" }).click();
+  await getQuasarMenu(page, "音声書き出し").click();
+  const addAudioButton = page.getByLabel("テキストを追加");
+  await expect(addAudioButton).toBeDisabled();
+
+  const dragFrom = await getCenter(
+    page.locator(".audio-cell .icon-container").first(),
+  );
+  const dragTo = await getCenter(
+    page.locator(".audio-cell .icon-container").nth(1),
+  );
+  await page.mouse.move(dragFrom.x, dragFrom.y);
+  await page.mouse.down();
+  await page.mouse.move(dragTo.x, dragTo.y);
+  await page.mouse.up();
+
+  await validateInput(page.locator(".audio-cell input").first(), "foo");
+  await validateInput(page.locator(".audio-cell input").nth(1), "bar");
+
+  await page.evaluate(() => {
+    type _Window = Window & {
+      _resolveShowSaveDirectoryDialog: () => void;
+    };
+
+    const _window = window as unknown as _Window;
+    _window._resolveShowSaveDirectoryDialog();
+  });
+  await expect(addAudioButton).toBeEnabled();
 });
 
 test("選択中のAudioCellを削除しても正しくフォーカスが移動する", async ({
