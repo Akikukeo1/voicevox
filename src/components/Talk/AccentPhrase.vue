@@ -210,7 +210,7 @@
 import { computed, ref } from "vue";
 import AudioAccent from "./AudioAccent.vue";
 import AudioParameter from "./AudioParameter.vue";
-import type { MenuItemButton } from "@/components/Menu/type";
+import type { MenuItemButton, MenuItemSeparator } from "@/components/Menu/type";
 import ContextMenu from "@/components/Menu/ContextMenu/Container.vue";
 import { useStore } from "@/store";
 import type { AudioKey, MoraDataType } from "@/type/preload";
@@ -243,7 +243,28 @@ const store = useStore();
 
 const uiLocked = computed(() => store.getters.UI_LOCKED);
 
-const contextMenudata = ref<[MenuItemButton]>([
+const resetMenuItem = computed<MenuItemButton | undefined>(() => {
+  const type = props.selectedDetail;
+  if (type === "accent") return undefined;
+
+  return {
+    type: "button",
+    label: type === "pitch" ? "イントネーションをリセット" : "長さをリセット",
+    onClick: () => {
+      void store.actions.COMMAND_RESET_SELECTED_MORA_PITCH_AND_LENGTH({
+        audioKey: props.audioKey,
+        accentPhraseIndex: props.index,
+        type,
+      });
+    },
+    disableWhenUiLocked: true,
+  };
+});
+
+const contextMenudata = computed<(MenuItemButton | MenuItemSeparator)[]>(() => [
+  ...(resetMenuItem.value == undefined
+    ? []
+    : [resetMenuItem.value, { type: "separator" } as const]),
   {
     type: "button",
     label: "削除",
